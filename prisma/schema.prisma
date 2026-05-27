@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id             String   @id @db.Uuid
+  goal           String
+  age            Int
+  heightCm       Int      @map("height_cm")
+  weightKg       Decimal  @map("weight_kg")
+  fitnessLevel   String   @map("fitness_level")
+  equipment      String
+  dietPreference String   @map("diet_preference")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @map("updated_at")
+
+  @@map("profiles")
+}
+
+model Workout {
+  id              String     @id
+  title           String
+  level           String
+  goal            String
+  day             Int
+  durationMinutes Int        @map("duration_minutes")
+  focus           String
+  exercises       Exercise[]
+
+  @@map("workouts")
+}
+
+model Exercise {
+  id          String  @id @default(uuid()) @db.Uuid
+  workoutId   String  @map("workout_id")
+  workout     Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  name        String
+  sets        Int
+  reps        String
+  restSeconds Int     @map("rest_seconds")
+  tutorialUrl String  @map("tutorial_url")
+  position    Int
+
+  @@map("exercises")
+}
+
+model WorkoutLog {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  workoutId    String?   @map("workout_id")
+  status       String
+  scheduledFor DateTime  @map("scheduled_for") @db.Date
+  completedAt  DateTime? @map("completed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@map("workout_logs")
+}
+
+model ProgressEntry {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  entryDate         DateTime @map("entry_date") @db.Date
+  weightKg          Decimal  @map("weight_kg")
+  waistCm           Decimal  @map("waist_cm")
+  calories          Int
+  workoutsCompleted Int      @default(0) @map("workouts_completed")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("progress_entries")
+}
