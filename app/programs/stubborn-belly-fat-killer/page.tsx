@@ -6,7 +6,8 @@ import { ArrowLeft, Flame, Info, ShieldAlert, Utensils } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ExerciseDemoCard } from "@/components/ExerciseDemoCard";
 import { calculateCaloriesBurned, deficitStatus, maintenanceCalories } from "@/lib/calories";
-import { calorieTarget } from "@/lib/generators";
+import { calorieTarget, todayKey } from "@/lib/generators";
+import { foodLogTotals } from "@/lib/nutrition";
 import { stubbornBellyFatKillerProgram } from "@/lib/program-data";
 import { loadState } from "@/lib/storage";
 import { FitGoalState, OnboardingProfile } from "@/lib/types";
@@ -30,8 +31,11 @@ export default function StubbornBellyFatKillerPage() {
 
   const profile = state?.profile ?? fallbackProfile;
   const program = stubbornBellyFatKillerProgram;
+  const today = todayKey();
   const maintenance = maintenanceCalories(profile.weightKg, profile.heightCm, profile.age, profile.fitnessLevel === "beginner" ? 1.35 : 1.5);
   const intakeTarget = calorieTarget({ ...profile, goal: "belly-fat-reduction" });
+  const todaysFoodLogs = (state?.foodLogs ?? []).filter((entry) => entry.date === today);
+  const eatenTotals = foodLogTotals(todaysFoodLogs.filter((entry) => entry.status === "eaten"));
 
   const exerciseCalories = useMemo(() => {
     return program.exercises.map((exercise) => {
@@ -44,14 +48,16 @@ export default function StubbornBellyFatKillerPage() {
     });
   }, [profile.weightKg, program.exercises]);
 
-  const workoutCaloriesBurned = exerciseCalories.reduce((sum, item) => sum + item.total, 0);
-  const caloriesConsumed = Math.round(intakeTarget * 0.82);
+  const plannedWorkoutCalories = exerciseCalories.reduce((sum, item) => sum + item.total, 0);
+  const workoutCaloriesBurned = state?.completedWorkoutDates.includes(today) ? plannedWorkoutCalories : 0;
+  const caloriesConsumed = eatenTotals.calories;
   const summary = deficitStatus({
     maintenance,
     caloriesConsumed,
     workoutCaloriesBurned,
     targetDeficit: program.targetDailyDeficit
   });
+  const dashboardStatus = todaysFoodLogs.length ? summary.status : "Log food to see your calorie deficit";
   const remainingToEat = Math.max(0, intakeTarget - caloriesConsumed);
 
   return (
@@ -80,7 +86,10 @@ export default function StubbornBellyFatKillerPage() {
           <p className="flex items-center gap-2 text-sm font-bold text-leaf">
             <Flame size={18} /> Calorie deficit dashboard
           </p>
-          <h2 className="mt-2 text-2xl font-black text-ink">{summary.status}</h2>
+          <h2 className="mt-2 text-2xl font-black text-ink">{dashboardStatus}</h2>
+          <p className="mt-2 text-sm leading-6 text-zinc-600">
+            This uses today&apos;s foods you logged and workout calories only after you mark today&apos;s workout as done. No food intake is guessed.
+          </p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <CalorieTile label="Intake target" value={intakeTarget} />
             <CalorieTile label="Food eaten" value={caloriesConsumed} />
@@ -89,6 +98,16 @@ export default function StubbornBellyFatKillerPage() {
             <CalorieTile label="Target deficit" value={program.targetDailyDeficit} />
             <CalorieTile label="Actual deficit" value={summary.deficit} />
           </div>
+          {!todaysFoodLogs.length && (
+            <Link href="/nutrition/food-library" className="mt-4 flex min-h-12 items-center justify-center rounded-lg bg-ink px-4 text-sm font-black text-white">
+              Log food to update this dashboard
+            </Link>
+          )}
+          {!workoutCaloriesBurned && (
+            <p className="mt-3 rounded-lg bg-sky/15 p-3 text-sm font-bold text-ink">
+              Planned workout burn: {plannedWorkoutCalories} cal. It will count here after you mark today&apos;s workout as done on the dashboard.
+            </p>
+          )}
           <div className="mt-4 rounded-lg bg-zinc-50 p-3">
             <div className="flex items-center justify-between text-sm font-black">
               <span>Remaining calories to eat</span>
