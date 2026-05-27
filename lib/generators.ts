@@ -30,17 +30,6 @@ export function macroTargets(profile: OnboardingProfile) {
   return { calories, protein, carbs, fats };
 }
 
-export function nutritionEstimate(profile: OnboardingProfile) {
-  const targets = macroTargets(profile);
-  return {
-    calories: Math.round(targets.calories * 0.78),
-    protein: Math.round(targets.protein * 0.72),
-    carbs: Math.round(targets.carbs * 0.68),
-    fats: Math.round(targets.fats * 0.74),
-    micronutrients: ["Vitamin C", "Iron", "Potassium", "Calcium", "Omega-3"]
-  };
-}
-
 export function todayKey(date = new Date()) {
   return date.toISOString().slice(0, 10);
 }

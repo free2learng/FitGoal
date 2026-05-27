@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import { CalendarDays, Check, Droplets, Flame, RefreshCcw, ShieldAlert, Utensils } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { MetricCard } from "@/components/MetricCard";
-import { calorieTarget, dietPlan, macroTargets, nutritionEstimate, planLabel, progressPercent, proteinTarget, todaysWorkout, waterTargetLiters } from "@/lib/generators";
-import { micronutrients } from "@/lib/program-data";
+import { calculateCaloriesBurned } from "@/lib/calories";
+import { calorieTarget, dietPlan, macroTargets, planLabel, progressPercent, proteinTarget, todayKey, todaysWorkout, waterTargetLiters } from "@/lib/generators";
+import { foodLogTotals, suggestNextMeal } from "@/lib/nutrition";
+import { micronutrients, stubbornBellyFatKillerProgram } from "@/lib/program-data";
 import { completeToday, loadState, skipToday } from "@/lib/storage";
 import { FitGoalState } from "@/lib/types";
 
@@ -28,7 +30,25 @@ export default function DashboardPage() {
   const water = waterTargetLiters(state.profile);
   const progress = progressPercent(state);
   const macros = macroTargets(state.profile);
-  const eaten = nutritionEstimate(state.profile);
+  const today = todayKey();
+  const todaysFoodLogs = (state.foodLogs ?? []).filter((entry) => entry.date === today);
+  const eatenTotals = foodLogTotals(todaysFoodLogs.filter((entry) => entry.status === "eaten"));
+  const plannedTotals = foodLogTotals(todaysFoodLogs.filter((entry) => entry.status === "planned"));
+  const plannedWorkoutCalories = stubbornBellyFatKillerProgram.exercises.reduce((sum, exercise) => {
+    const perSet = calculateCaloriesBurned({
+      userWeightKg: state.profile.weightKg,
+      metValue: exercise.metValue,
+      durationMinutes: exercise.durationMinutesPerSet
+    });
+    return sum + perSet * exercise.sets;
+  }, 0);
+  const completedWorkoutCalories = state.completedWorkoutDates.includes(today) ? plannedWorkoutCalories : 0;
+  const expectedWorkoutCalories = state.completedWorkoutDates.includes(today) ? 0 : plannedWorkoutCalories;
+  const actualNetCalories = eatenTotals.calories - completedWorkoutCalories;
+  const projectedNetCalories = eatenTotals.calories + plannedTotals.calories - completedWorkoutCalories - expectedWorkoutCalories;
+  const remainingCalories = Math.max(0, macros.calories - projectedNetCalories);
+  const proteinStillNeeded = Math.max(0, macros.protein - eatenTotals.protein - plannedTotals.protein);
+  const suggestedMeal = suggestNextMeal(remainingCalories, proteinStillNeeded);
 
   return (
     <AppShell>
@@ -52,22 +72,32 @@ export default function DashboardPage() {
         <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="flex items-center gap-2 text-sm font-bold text-leaf"><Utensils size={17} /> Nutrition today</p>
-              <h2 className="mt-2 text-2xl font-black text-ink">Macros and micros</h2>
+              <p className="flex items-center gap-2 text-sm font-bold text-leaf"><Utensils size={17} /> Today&apos;s Calorie Balance</p>
+              <h2 className="mt-2 text-2xl font-black text-ink">{todaysFoodLogs.length ? "Logged from your food" : "Log food to start"}</h2>
             </div>
-            <Link href="/nutrition/food-library" className="rounded-lg bg-mint/15 px-3 py-2 text-sm font-black text-leaf">Foods</Link>
+            <Link href="/nutrition/food-library" className="rounded-lg bg-mint/15 px-3 py-2 text-sm font-black text-leaf">Log food</Link>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-zinc-600">Food intake is never assumed. Log eaten foods manually, or add planned foods and convert them after eating.</p>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <BalanceTile label="Eaten so far" value={eatenTotals.calories} suffix="cal" />
+            <BalanceTile label="Planned meals" value={plannedTotals.calories} suffix="cal" />
+            <BalanceTile label="Workout burned" value={completedWorkoutCalories} suffix="cal" />
+            <BalanceTile label="Planned burn" value={expectedWorkoutCalories} suffix="cal" />
+            <BalanceTile label="Actual net" value={actualNetCalories} suffix="cal" />
+            <BalanceTile label="Projected net" value={projectedNetCalories} suffix="cal" />
+            <BalanceTile label="Remaining" value={remainingCalories} suffix="cal" />
+            <BalanceTile label="Protein needed" value={proteinStillNeeded} suffix="g" />
           </div>
           <div className="mt-4 space-y-3">
-            <MacroBar label="Calories eaten" eaten={eaten.calories} target={macros.calories} suffix=" cal" />
-            <MacroBar label="Protein" eaten={eaten.protein} target={macros.protein} suffix="g" />
-            <MacroBar label="Carbs" eaten={eaten.carbs} target={macros.carbs} suffix="g" />
-            <MacroBar label="Fats" eaten={eaten.fats} target={macros.fats} suffix="g" />
+            <MacroBar label="Protein eaten" eaten={eatenTotals.protein} target={macros.protein} suffix="g" />
+            <MacroBar label="Carbs eaten" eaten={eatenTotals.carbs} target={macros.carbs} suffix="g" />
+            <MacroBar label="Fats eaten" eaten={eatenTotals.fats} target={macros.fats} suffix="g" />
           </div>
           <div className="mt-4 rounded-lg bg-zinc-50 p-3">
             <p className="text-sm font-black text-ink">Vitamins and minerals checklist</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {micronutrients.map((item) => {
-                const done = eaten.micronutrients.includes(item.name);
+                const done = eatenTotals.micronutrients.includes(item.name);
                 return (
                   <span key={item.name} className={`rounded-lg px-2 py-1 text-xs font-bold ${done ? "bg-mint/20 text-leaf" : "bg-white text-zinc-500"}`}>
                     {done ? "✓" : "+"} {item.name}
@@ -75,6 +105,10 @@ export default function DashboardPage() {
                 );
               })}
             </div>
+          </div>
+          <div className="mt-4 rounded-lg bg-sky/15 p-3">
+            <p className="text-sm font-black text-ink">Suggested next meal</p>
+            <p className="mt-1 text-sm text-zinc-700">{suggestedMeal.name} ({suggestedMeal.calories} cal, {suggestedMeal.protein}g protein)</p>
           </div>
         </article>
 
@@ -134,8 +168,18 @@ export default function DashboardPage() {
   );
 }
 
+function BalanceTile({ label, value, suffix }: { label: string; value: number; suffix: string }) {
+  return (
+    <div className="rounded-lg bg-zinc-50 p-3">
+      <p className="text-xs font-bold uppercase tracking-normal text-zinc-500">{label}</p>
+      <p className="mt-1 text-xl font-black text-ink">{value}</p>
+      <p className="text-xs font-semibold text-zinc-500">{suffix}</p>
+    </div>
+  );
+}
+
 function MacroBar({ label, eaten, target, suffix }: { label: string; eaten: number; target: number; suffix: string }) {
-  const percent = Math.min(100, Math.round((eaten / target) * 100));
+  const percent = target > 0 ? Math.min(100, Math.round((eaten / target) * 100)) : 0;
   return (
     <div>
       <div className="flex items-center justify-between text-sm font-black">

@@ -74,6 +74,8 @@ export type MealDay = {
 };
 
 export type FoodCategory = "protein" | "carbs" | "healthy-fats";
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack" | "post-workout";
+export type FoodLogStatus = "eaten" | "planned";
 
 export type FoodItem = {
   name: string;
@@ -86,6 +88,22 @@ export type FoodItem = {
   keyMicronutrients: string[];
   fitnessBenefit: string;
   mealUse: string;
+};
+
+export type FoodLogEntry = {
+  id: string;
+  date: string;
+  status: FoodLogStatus;
+  mealType: MealType;
+  foodName: string;
+  serving: string;
+  servingMultiplier: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  keyMicronutrients: string[];
+  source: "library" | "custom";
 };
 
 export type MicronutrientItem = {
@@ -108,4 +126,5 @@ export type FitGoalState = {
   completedWorkoutDates: string[];
   skippedDates: string[];
   progress: ProgressEntry[];
+  foodLogs?: FoodLogEntry[];
 };

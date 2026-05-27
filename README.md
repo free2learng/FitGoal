@@ -15,6 +15,8 @@ FitGoal is a mobile-first MVP fitness app built with Next.js, TypeScript, Tailwi
 - Stubborn Belly Fat Killer program at `/programs/stubborn-belly-fat-killer`
 - MET-based calorie burn calculator with exercise demo cards
 - Nutrition food library at `/nutrition/food-library`
+- Manual food logging with eaten foods, planned foods, custom foods, serving size, and meal type
+- Dashboard calorie balance based only on user-logged foods
 - Supabase SQL schema and optional Prisma schema
 
 ## Local setup
@@ -76,3 +78,4 @@ prisma/             optional Prisma schema
 - Nutrition targets are simple estimates intended for MVP planning, not medical advice.
 - The belly fat program explicitly avoids spot fat reduction claims. Belly fat reduction is framed as total body fat loss through calorie deficit, training, cardio, sleep, and nutrition.
 - Calorie burn values use MET estimates and vary by weight, intensity, and fitness level.
+- Food consumed data is never assumed. Users must log foods manually or plan foods from the library before the dashboard includes them.

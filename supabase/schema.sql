@@ -123,6 +123,24 @@ create table if not exists public.micronutrients (
   why_it_matters text not null
 );
 
+create table if not exists public.food_logs (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  log_date date not null,
+  status text not null check (status in ('eaten', 'planned')),
+  meal_type text not null check (meal_type in ('breakfast', 'lunch', 'dinner', 'snack', 'post-workout')),
+  food_name text not null,
+  serving text not null,
+  serving_multiplier numeric not null default 1,
+  calories integer not null,
+  protein numeric not null default 0,
+  carbs numeric not null default 0,
+  fats numeric not null default 0,
+  key_micronutrients text[] not null default '{}',
+  source text not null check (source in ('library', 'custom')),
+  created_at timestamptz not null default now()
+);
+
 alter table public.profiles enable row level security;
 alter table public.meal_days enable row level security;
 alter table public.meals enable row level security;
@@ -134,6 +152,7 @@ alter table public.workout_programs enable row level security;
 alter table public.exercise_library enable row level security;
 alter table public.nutrition_foods enable row level security;
 alter table public.micronutrients enable row level security;
+alter table public.food_logs enable row level security;
 
 create policy "Users can manage own profile" on public.profiles for all using (auth.uid() = id) with check (auth.uid() = id);
 create policy "Users can manage own meal days" on public.meal_days for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -148,6 +167,7 @@ create policy "Anyone can read workout programs" on public.workout_programs for 
 create policy "Anyone can read exercise library" on public.exercise_library for select using (true);
 create policy "Anyone can read nutrition foods" on public.nutrition_foods for select using (true);
 create policy "Anyone can read micronutrients" on public.micronutrients for select using (true);
+create policy "Users can manage own food logs" on public.food_logs for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 insert into public.workout_programs (id, title, subtitle, goal, level, target_daily_deficit, weekly_fat_loss_estimate, safety_note)
 values ('stubborn-belly-fat-killer', 'Stubborn Belly Fat Killer', 'Beginner fat-loss conditioning with simple strength moves', 'belly-fat-reduction', 'beginner', 400, 'About 0.25-0.5 kg per week when paired with nutrition and recovery', 'Avoid extreme calorie deficits. Beginners usually do best with a 300-500 calorie daily deficit.')
