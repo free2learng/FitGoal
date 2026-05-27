@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { CalendarDays, Check, Droplets, Flame, Plus, RefreshCcw, ShieldAlert, Trash2, Utensils } from "lucide-react";
+import { Activity, CalendarDays, Check, Droplets, Dumbbell, Flame, Plus, RefreshCcw, ShieldAlert, Target, Trash2, Utensils } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { calculateCaloriesBurned } from "@/lib/calories";
-import { calorieTarget, dietPlan, macroTargets, planLabel, progressPercent, proteinTarget, todayKey, todaysWorkout, waterTargetMl } from "@/lib/generators";
+import { calorieTarget, dietPlan, estimateWorkoutCalories, macroTargets, planLabel, progressPercent, proteinTarget, todayKey, todaysWorkout, waterTargetMl, workoutPlan } from "@/lib/generators";
 import { calculateProteinPerMeal, foodLogTotals, mealProteinStatus, mealTotalsByType, suggestNextMeal } from "@/lib/nutrition";
-import { micronutrients, stubbornBellyFatKillerProgram } from "@/lib/program-data";
+import { micronutrients } from "@/lib/program-data";
 import { addHydrationLog, completeToday, deleteHydrationLog, loadState, skipToday, toggleHydrationAdjustment } from "@/lib/storage";
 import { FitGoalState, HydrationDrinkType } from "@/lib/types";
+import { bestCardioRecommendation } from "@/lib/workout-plans";
 
 const mealTypes = ["breakfast", "lunch", "dinner", "snack", "post-workout"] as const;
 const hydrationQuickAdds: { label: string; amountMl: number; drinkType: HydrationDrinkType }[] = [
@@ -35,6 +36,7 @@ export default function DashboardPage() {
   if (!state) return null;
 
   const workout = todaysWorkout(state);
+  const weeklyPlan = workoutPlan(state);
   const meals = dietPlan(state.profile);
   const calories = calorieTarget(state.profile);
   const protein = proteinTarget(state.profile);
@@ -49,14 +51,7 @@ export default function DashboardPage() {
   const waterGoal = waterTargetMl(state.profile, hydrationAdjustments);
   const waterLogged = todaysHydrationLogs.reduce((sum, entry) => sum + entry.amountMl, 0);
   const waterRemaining = Math.max(0, waterGoal - waterLogged);
-  const plannedWorkoutCalories = stubbornBellyFatKillerProgram.exercises.reduce((sum, exercise) => {
-    const perSet = calculateCaloriesBurned({
-      userWeightKg: state.profile.weightKg,
-      metValue: exercise.metValue,
-      durationMinutes: exercise.durationMinutesPerSet
-    });
-    return sum + perSet * exercise.sets;
-  }, 0);
+  const plannedWorkoutCalories = estimateWorkoutCalories(workout, state.profile.weightKg);
   const completedWorkoutCalories = state.completedWorkoutDates.includes(today) ? plannedWorkoutCalories : 0;
   const expectedWorkoutCalories = state.completedWorkoutDates.includes(today) ? 0 : plannedWorkoutCalories;
   const actualNetCalories = eatenTotals.calories - completedWorkoutCalories;
@@ -214,9 +209,14 @@ export default function DashboardPage() {
             <div>
               <p className="flex items-center gap-2 text-sm font-bold text-leaf"><CalendarDays size={17} /> Workout</p>
               <h2 className="mt-2 text-2xl font-black text-ink">{workout.title}</h2>
-              <p className="mt-1 text-sm text-zinc-600">{workout.durationMinutes} min - {workout.focus}</p>
+              <p className="mt-1 text-sm text-zinc-600">{workout.durationMinutes} min - {workout.dayTheme ?? workout.focus}</p>
             </div>
             <Link href="/workouts/today" className="rounded-lg bg-mint/15 px-3 py-2 text-sm font-black text-leaf">Open</Link>
+          </div>
+          <div className="mt-4 rounded-lg bg-zinc-50 p-3">
+            <p className="text-sm font-black text-ink">{workout.focus}</p>
+            <p className="mt-1 text-sm leading-6 text-zinc-600">{workout.whyThisWorkout}</p>
+            <p className="mt-2 text-xs font-black uppercase tracking-normal text-zinc-500">Estimated burn: {plannedWorkoutCalories} cal</p>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
             <button onClick={() => setState(completeToday(state))} className="flex h-12 items-center justify-center gap-2 rounded-lg bg-leaf text-sm font-black text-white">
@@ -227,6 +227,37 @@ export default function DashboardPage() {
             </button>
           </div>
           {state.skippedDates.length > 0 && <p className="mt-3 text-sm font-semibold text-zinc-600">Adaptive logic active: missed days are rescheduled into upcoming workouts.</p>}
+        </article>
+
+        <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
+          <p className="flex items-center gap-2 text-sm font-bold text-leaf"><Dumbbell size={17} /> 7-day training plan</p>
+          <h2 className="mt-2 text-2xl font-black text-ink">Your weekly split</h2>
+          <p className="mt-2 text-sm leading-6 text-zinc-600">Built around your goal, level, and available equipment. Missing a day shifts the next best workout into today.</p>
+          <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
+            {weeklyPlan.map((day, index) => (
+              <Link key={`${day.id}-${index}`} href={`/workouts/${day.id}`} className="w-[245px] shrink-0 rounded-lg bg-zinc-50 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="rounded-lg bg-white px-2 py-1 text-xs font-black text-leaf">Day {index + 1}</span>
+                  <span className="rounded-lg bg-mint/15 px-2 py-1 text-xs font-black capitalize text-ink">{day.intensity}</span>
+                </div>
+                <p className="mt-3 text-sm font-black text-zinc-500">{day.dayTheme}</p>
+                <h3 className="mt-1 text-lg font-black text-ink">{day.title}</h3>
+                <p className="mt-2 text-sm text-zinc-600">{day.durationMinutes} min - {estimateWorkoutCalories(day, state.profile.weightKg)} cal est.</p>
+              </Link>
+            ))}
+          </div>
+        </article>
+
+        <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
+          <p className="flex items-center gap-2 text-sm font-bold text-leaf"><Activity size={17} /> Cardio guidance</p>
+          <h2 className="mt-2 text-2xl font-black text-ink">Most effective cardio for you</h2>
+          <p className="mt-2 text-sm leading-6 text-zinc-600">{bestCardioRecommendation(state.profile)}</p>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <AdvicePill icon={<Target size={15} />} title="Incline walk" text="High repeatability, low impact." />
+            <AdvicePill icon={<Flame size={15} />} title="HIIT" text="Efficient, use sparingly." />
+            <AdvicePill icon={<Droplets size={15} />} title="Swimming" text="Joint-friendly full-body cardio." />
+            <AdvicePill icon={<Activity size={15} />} title="Treadmill" text="Clear pace and interval targets." />
+          </div>
         </article>
 
         <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
@@ -272,6 +303,15 @@ function AdjustmentButton({ active, label, onClick }: { active: boolean; label: 
     <button onClick={onClick} className={`min-h-11 rounded-lg px-2 text-xs font-black ${active ? "bg-sky text-ink" : "bg-zinc-100 text-zinc-600"}`}>
       {label}
     </button>
+  );
+}
+
+function AdvicePill({ icon, title, text }: { icon: ReactNode; title: string; text: string }) {
+  return (
+    <div className="rounded-lg bg-zinc-50 p-3">
+      <p className="flex items-center gap-2 text-sm font-black text-ink">{icon}{title}</p>
+      <p className="mt-1 text-xs font-semibold leading-5 text-zinc-600">{text}</p>
+    </div>
   );
 }
 

@@ -2,6 +2,7 @@ export type Goal = "fat-loss" | "belly-fat-reduction" | "muscle-gain" | "mainten
 export type FitnessLevel = "beginner" | "intermediate" | "athletic";
 export type Equipment = "none" | "dumbbells" | "gym";
 export type DietPreference = "balanced" | "high-protein" | "vegetarian";
+export type WorkoutType = "upper-body" | "lower-body" | "full-body" | "leg-day" | "cardio" | "hiit" | "swimming" | "incline-walk" | "treadmill-run" | "mobility";
 
 export type OnboardingProfile = {
   goal: Goal;
@@ -19,6 +20,9 @@ export type Exercise = {
   reps: string;
   restSeconds: number;
   tutorialUrl: string;
+  targetMuscles?: string[];
+  difficulty?: "beginner" | "moderate" | "challenging";
+  coachingTip?: string;
 };
 
 export type ProgramExercise = Exercise & {
@@ -52,6 +56,13 @@ export type Workout = {
   day: number;
   durationMinutes: number;
   focus: string;
+  workoutType?: WorkoutType;
+  dayTheme?: string;
+  intensity?: "easy" | "moderate" | "hard";
+  equipment?: Array<Equipment | "any">;
+  bestFor?: string;
+  whyThisWorkout?: string;
+  cardioAdvice?: string;
   exercises: Exercise[];
 };
 

@@ -1,5 +1,6 @@
-import { mealPlanFor, workoutFor, workouts } from "@/lib/seed-data";
-import { FitGoalState, Goal, HydrationAdjustment, OnboardingProfile, ProgressEntry } from "@/lib/types";
+import { mealPlanFor } from "@/lib/seed-data";
+import { FitGoalState, Goal, HydrationAdjustment, OnboardingProfile, ProgressEntry, Workout } from "@/lib/types";
+import { weeklyWorkoutPlan } from "@/lib/workout-plans";
 
 export function calorieTarget(profile: OnboardingProfile) {
   const base = 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + 5;
@@ -46,9 +47,29 @@ export function todayKey(date = new Date()) {
 
 export function todaysWorkout(state: FitGoalState) {
   const missedCount = state.skippedDates.length;
-  const baseWorkout = workoutFor(state.profile.fitnessLevel, state.profile.goal);
-  const alternatives = workouts.filter((workout) => workout.level === state.profile.fitnessLevel || workout.goal === state.profile.goal);
-  return alternatives[missedCount % alternatives.length] ?? baseWorkout;
+  return weeklyWorkoutPlan(state.profile, missedCount)[0];
+}
+
+export function workoutPlan(state: FitGoalState) {
+  return weeklyWorkoutPlan(state.profile, state.skippedDates.length);
+}
+
+export function estimateWorkoutCalories(workout: Workout, weightKg: number) {
+  const metByType = {
+    "upper-body": 4.5,
+    "lower-body": 5.2,
+    "full-body": 5.8,
+    "leg-day": 5.8,
+    cardio: 5.5,
+    hiit: 8,
+    swimming: 6,
+    "incline-walk": 6.3,
+    "treadmill-run": 7.5,
+    mobility: 2.5
+  };
+  const intensityBoost = workout.intensity === "hard" ? 1.12 : workout.intensity === "easy" ? 0.9 : 1;
+  const met = (workout.workoutType ? metByType[workout.workoutType] : 5) * intensityBoost;
+  return Math.round((met * weightKg * workout.durationMinutes) / 60);
 }
 
 export function progressPercent(state: FitGoalState) {

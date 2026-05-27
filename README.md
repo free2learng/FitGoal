@@ -7,6 +7,7 @@ FitGoal is a mobile-first MVP fitness app built with Next.js, TypeScript, Tailwi
 - Onboarding quiz for goal, age, height, weight, fitness level, equipment, and diet preference
 - Dashboard with today’s workout, calorie target, protein target, water goal, and weekly progress
 - Beginner, intermediate, and athletic workout plan generation
+- Adaptive 7-day training split with upper body, lower body, full body, leg day, HIIT, incline walk, treadmill, swimming, and mobility guidance
 - Fat loss, muscle gain, and maintenance goal support
 - 7-day meal plan with calories and protein
 - Workout detail page with exercises, sets, reps, rest time, and tutorial links
