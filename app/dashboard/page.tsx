@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CalendarDays, Check, Droplets, Flame, RefreshCcw } from "lucide-react";
+import { CalendarDays, Check, Droplets, Flame, RefreshCcw, ShieldAlert, Utensils } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { MetricCard } from "@/components/MetricCard";
-import { calorieTarget, dietPlan, planLabel, progressPercent, proteinTarget, todaysWorkout, waterTargetLiters } from "@/lib/generators";
+import { calorieTarget, dietPlan, macroTargets, nutritionEstimate, planLabel, progressPercent, proteinTarget, todaysWorkout, waterTargetLiters } from "@/lib/generators";
+import { micronutrients } from "@/lib/program-data";
 import { completeToday, loadState, skipToday } from "@/lib/storage";
 import { FitGoalState } from "@/lib/types";
 
@@ -26,6 +27,8 @@ export default function DashboardPage() {
   const protein = proteinTarget(state.profile);
   const water = waterTargetLiters(state.profile);
   const progress = progressPercent(state);
+  const macros = macroTargets(state.profile);
+  const eaten = nutritionEstimate(state.profile);
 
   return (
     <AppShell>
@@ -45,6 +48,43 @@ export default function DashboardPage() {
           <MetricCard label="Water" value={`${water}L`} hint="goal today" />
           <MetricCard label="Streak" value={`${state.completedWorkoutDates.length}`} hint="workouts done" />
         </div>
+
+        <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-bold text-leaf"><Utensils size={17} /> Nutrition today</p>
+              <h2 className="mt-2 text-2xl font-black text-ink">Macros and micros</h2>
+            </div>
+            <Link href="/nutrition/food-library" className="rounded-lg bg-mint/15 px-3 py-2 text-sm font-black text-leaf">Foods</Link>
+          </div>
+          <div className="mt-4 space-y-3">
+            <MacroBar label="Calories eaten" eaten={eaten.calories} target={macros.calories} suffix=" cal" />
+            <MacroBar label="Protein" eaten={eaten.protein} target={macros.protein} suffix="g" />
+            <MacroBar label="Carbs" eaten={eaten.carbs} target={macros.carbs} suffix="g" />
+            <MacroBar label="Fats" eaten={eaten.fats} target={macros.fats} suffix="g" />
+          </div>
+          <div className="mt-4 rounded-lg bg-zinc-50 p-3">
+            <p className="text-sm font-black text-ink">Vitamins and minerals checklist</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {micronutrients.map((item) => {
+                const done = eaten.micronutrients.includes(item.name);
+                return (
+                  <span key={item.name} className={`rounded-lg px-2 py-1 text-xs font-bold ${done ? "bg-mint/20 text-leaf" : "bg-white text-zinc-500"}`}>
+                    {done ? "✓" : "+"} {item.name}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        </article>
+
+        <article className="rounded-lg border border-peach/50 bg-peach/20 p-5">
+          <p className="flex items-center gap-2 text-sm font-black text-ink"><ShieldAlert size={17} /> Belly fat note</p>
+          <p className="mt-2 text-sm leading-6 text-zinc-700">Belly fat reduces through total body fat loss, not spot reduction. Use a beginner-friendly calorie deficit, strength training, cardio, sleep, and nutrition.</p>
+          <Link href="/programs/stubborn-belly-fat-killer" className="mt-3 inline-flex h-11 items-center justify-center rounded-lg bg-ink px-4 text-sm font-black text-white">
+            Open Stubborn Belly Fat Killer
+          </Link>
+        </article>
 
         <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
           <div className="flex items-start justify-between gap-4">
@@ -91,5 +131,20 @@ export default function DashboardPage() {
         </article>
       </section>
     </AppShell>
+  );
+}
+
+function MacroBar({ label, eaten, target, suffix }: { label: string; eaten: number; target: number; suffix: string }) {
+  const percent = Math.min(100, Math.round((eaten / target) * 100));
+  return (
+    <div>
+      <div className="flex items-center justify-between text-sm font-black">
+        <span>{label}</span>
+        <span>{eaten}{suffix} / {target}{suffix}</span>
+      </div>
+      <div className="mt-2 h-2 rounded-full bg-zinc-200">
+        <div className="h-2 rounded-full bg-mint" style={{ width: `${percent}%` }} />
+      </div>
+    </div>
   );
 }

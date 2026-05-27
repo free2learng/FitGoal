@@ -5,12 +5,12 @@ export function calorieTarget(profile: OnboardingProfile) {
   const base = 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + 5;
   const activity = profile.fitnessLevel === "beginner" ? 1.35 : profile.fitnessLevel === "intermediate" ? 1.5 : 1.7;
   const maintenance = base * activity;
-  const target = profile.goal === "fat-loss" ? maintenance - 450 : profile.goal === "muscle-gain" ? maintenance + 300 : maintenance;
+  const target = profile.goal === "fat-loss" || profile.goal === "belly-fat-reduction" ? maintenance - 400 : profile.goal === "muscle-gain" ? maintenance + 300 : maintenance;
   return Math.round(target / 25) * 25;
 }
 
 export function proteinTarget(profile: OnboardingProfile) {
-  const multiplier = profile.goal === "muscle-gain" ? 2.0 : profile.goal === "fat-loss" ? 1.8 : 1.6;
+  const multiplier = profile.goal === "muscle-gain" ? 2.0 : profile.goal === "fat-loss" || profile.goal === "belly-fat-reduction" ? 1.8 : 1.6;
   return Math.round(profile.weightKg * multiplier);
 }
 
@@ -19,7 +19,26 @@ export function waterTargetLiters(profile: OnboardingProfile) {
 }
 
 export function planLabel(goal: Goal) {
-  return goal === "fat-loss" ? "Fat loss" : goal === "muscle-gain" ? "Muscle gain" : "Maintenance";
+  return goal === "fat-loss" ? "Fat loss" : goal === "belly-fat-reduction" ? "Belly fat reduction" : goal === "muscle-gain" ? "Muscle gain" : "Maintenance";
+}
+
+export function macroTargets(profile: OnboardingProfile) {
+  const calories = calorieTarget(profile);
+  const protein = proteinTarget(profile);
+  const fats = Math.round((calories * 0.25) / 9);
+  const carbs = Math.round((calories - protein * 4 - fats * 9) / 4);
+  return { calories, protein, carbs, fats };
+}
+
+export function nutritionEstimate(profile: OnboardingProfile) {
+  const targets = macroTargets(profile);
+  return {
+    calories: Math.round(targets.calories * 0.78),
+    protein: Math.round(targets.protein * 0.72),
+    carbs: Math.round(targets.carbs * 0.68),
+    fats: Math.round(targets.fats * 0.74),
+    micronutrients: ["Vitamin C", "Iron", "Potassium", "Calcium", "Omega-3"]
+  };
 }
 
 export function todayKey(date = new Date()) {

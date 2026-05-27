@@ -2,7 +2,7 @@ create extension if not exists "uuid-ossp";
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  goal text not null check (goal in ('fat-loss', 'muscle-gain', 'maintenance')),
+  goal text not null check (goal in ('fat-loss', 'belly-fat-reduction', 'muscle-gain', 'maintenance')),
   age integer not null,
   height_cm integer not null,
   weight_kg numeric not null,
@@ -73,6 +73,56 @@ create table if not exists public.progress_entries (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.workout_programs (
+  id text primary key,
+  title text not null,
+  subtitle text not null,
+  goal text not null check (goal in ('fat-loss', 'belly-fat-reduction', 'muscle-gain', 'maintenance')),
+  level text not null check (level in ('beginner', 'intermediate', 'athletic')),
+  target_daily_deficit integer,
+  weekly_fat_loss_estimate text,
+  safety_note text
+);
+
+create table if not exists public.exercise_library (
+  id uuid primary key default uuid_generate_v4(),
+  program_id text references public.workout_programs(id) on delete cascade,
+  name text not null,
+  sets integer not null,
+  reps text not null,
+  rest_seconds integer not null,
+  difficulty text not null,
+  target_muscles text[] not null default '{}',
+  demo_video_url text not null,
+  animation_url text,
+  met_value numeric not null,
+  duration_minutes_per_set numeric not null,
+  instructions text[] not null default '{}',
+  common_mistakes text[] not null default '{}',
+  beginner_tips text[] not null default '{}'
+);
+
+create table if not exists public.nutrition_foods (
+  id uuid primary key default uuid_generate_v4(),
+  name text not null,
+  category text not null check (category in ('protein', 'carbs', 'healthy-fats')),
+  serving text not null,
+  calories integer not null,
+  protein numeric not null,
+  carbs numeric not null,
+  fats numeric not null,
+  key_micronutrients text[] not null default '{}',
+  fitness_benefit text not null,
+  meal_use text not null
+);
+
+create table if not exists public.micronutrients (
+  id uuid primary key default uuid_generate_v4(),
+  name text not null unique,
+  foods text[] not null default '{}',
+  why_it_matters text not null
+);
+
 alter table public.profiles enable row level security;
 alter table public.meal_days enable row level security;
 alter table public.meals enable row level security;
@@ -80,6 +130,10 @@ alter table public.workout_logs enable row level security;
 alter table public.progress_entries enable row level security;
 alter table public.workouts enable row level security;
 alter table public.exercises enable row level security;
+alter table public.workout_programs enable row level security;
+alter table public.exercise_library enable row level security;
+alter table public.nutrition_foods enable row level security;
+alter table public.micronutrients enable row level security;
 
 create policy "Users can manage own profile" on public.profiles for all using (auth.uid() = id) with check (auth.uid() = id);
 create policy "Users can manage own meal days" on public.meal_days for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -90,3 +144,25 @@ create policy "Users can manage own logs" on public.workout_logs for all using (
 create policy "Users can manage own progress" on public.progress_entries for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Anyone can read seed workouts" on public.workouts for select using (true);
 create policy "Anyone can read seed exercises" on public.exercises for select using (true);
+create policy "Anyone can read workout programs" on public.workout_programs for select using (true);
+create policy "Anyone can read exercise library" on public.exercise_library for select using (true);
+create policy "Anyone can read nutrition foods" on public.nutrition_foods for select using (true);
+create policy "Anyone can read micronutrients" on public.micronutrients for select using (true);
+
+insert into public.workout_programs (id, title, subtitle, goal, level, target_daily_deficit, weekly_fat_loss_estimate, safety_note)
+values ('stubborn-belly-fat-killer', 'Stubborn Belly Fat Killer', 'Beginner fat-loss conditioning with simple strength moves', 'belly-fat-reduction', 'beginner', 400, 'About 0.25-0.5 kg per week when paired with nutrition and recovery', 'Avoid extreme calorie deficits. Beginners usually do best with a 300-500 calorie daily deficit.')
+on conflict (id) do nothing;
+
+insert into public.micronutrients (name, foods, why_it_matters)
+values
+  ('Vitamin A', array['Sweet potato','Eggs'], 'Supports immune health and vision.'),
+  ('Vitamin B12', array['Eggs','Greek yogurt','Tuna','Salmon'], 'Supports energy metabolism and red blood cells.'),
+  ('Vitamin C', array['Banana','Potatoes'], 'Supports tissue repair and iron absorption.'),
+  ('Vitamin D', array['Eggs','Salmon'], 'Supports bones, muscles, and immune function.'),
+  ('Iron', array['Lentils','Tofu','Oats','Quinoa'], 'Helps transport oxygen for training capacity.'),
+  ('Magnesium', array['Oats','Quinoa','Nuts','Chia seeds'], 'Supports muscle and nerve function.'),
+  ('Zinc', array['Chicken breast','Quinoa','Nuts'], 'Supports recovery and immune health.'),
+  ('Potassium', array['Banana','Sweet potato','Potatoes','Avocado'], 'Supports hydration and muscle contraction.'),
+  ('Calcium', array['Greek yogurt','Cottage cheese','Tofu','Chia seeds'], 'Supports bones and muscle contraction.'),
+  ('Omega-3', array['Salmon','Tuna','Chia seeds'], 'Supports heart health and recovery.')
+on conflict (name) do nothing;

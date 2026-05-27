@@ -36,7 +36,7 @@ export default function OnboardingPage() {
           <h1 className="mt-2 text-3xl font-black text-ink">Tell us where you are starting.</h1>
         </div>
         <Field label="Goal">
-          <Segment value={goal} onChange={setGoal} options={[["fat-loss", "Fat loss"], ["muscle-gain", "Muscle gain"], ["maintenance", "Maintain"]]} />
+          <Segment value={goal} onChange={setGoal} options={[["fat-loss", "Fat loss"], ["belly-fat-reduction", "Belly fat"], ["muscle-gain", "Muscle gain"], ["maintenance", "Maintain"]]} />
         </Field>
         <div className="grid grid-cols-3 gap-3">
           <NumberField name="age" label="Age" defaultValue={30} />

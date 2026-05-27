@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Dumbbell, Home, LineChart } from "lucide-react";
+import { Activity, Dumbbell, Flame, Home, LineChart, Utensils } from "lucide-react";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -14,15 +14,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
         </header>
         <div className="flex-1">{children}</div>
-        <nav className="sticky bottom-0 grid grid-cols-3 border-t border-zinc-100 bg-white/95 px-4 py-2 backdrop-blur">
+        <nav className="sticky bottom-0 grid grid-cols-5 border-t border-zinc-100 bg-white/95 px-2 py-2 backdrop-blur">
           <Link className="flex flex-col items-center gap-1 rounded-lg py-2 text-xs font-semibold text-zinc-700" href="/dashboard">
-            <Home size={20} /> Home
+            <Home size={18} /> Home
+          </Link>
+          <Link className="flex flex-col items-center gap-1 rounded-lg py-2 text-xs font-semibold text-zinc-700" href="/programs/stubborn-belly-fat-killer">
+            <Flame size={18} /> Plan
           </Link>
           <Link className="flex flex-col items-center gap-1 rounded-lg py-2 text-xs font-semibold text-zinc-700" href="/workouts/today">
-            <Dumbbell size={20} /> Workout
+            <Dumbbell size={18} /> Work
+          </Link>
+          <Link className="flex flex-col items-center gap-1 rounded-lg py-2 text-xs font-semibold text-zinc-700" href="/nutrition/food-library">
+            <Utensils size={18} /> Food
           </Link>
           <Link className="flex flex-col items-center gap-1 rounded-lg py-2 text-xs font-semibold text-zinc-700" href="/progress">
-            <LineChart size={20} /> Progress
+            <LineChart size={18} /> Stats
           </Link>
         </nav>
       </div>
