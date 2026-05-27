@@ -73,3 +73,116 @@ model ProgressEntry {
 
   @@map("progress_entries")
 }
+
+model NutritionFood {
+  id                   String   @id
+  name                 String
+  category             String
+  subcategory          String
+  servingSize          Decimal  @map("serving_size")
+  servingUnit          String   @map("serving_unit")
+  calories             Int
+  protein              Decimal
+  carbs                Decimal
+  fats                 Decimal
+  sugar                Decimal  @default(0)
+  fibre                Decimal  @default(0)
+  sodium               Decimal  @default(0)
+  caffeineMg           Decimal? @map("caffeine_mg")
+  vitamins             String[]
+  minerals             String[]
+  tags                 String[]
+  synonyms             String[]
+  commonServingOptions Json     @map("common_serving_options")
+  preparationMethod    String   @map("preparation_method")
+  isDrink              Boolean  @default(false) @map("is_drink")
+  isCustom             Boolean  @default(false) @map("is_custom")
+  source               String
+  verifiedStatus       String   @map("verified_status")
+  externalProvider     String?  @map("external_provider")
+  externalId           String?  @map("external_id")
+  barcode              String?
+  brandName            String?  @map("brand_name")
+  fitnessBenefit       String   @map("fitness_benefit")
+  mealUse              String   @map("meal_use")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@map("nutrition_foods")
+}
+
+model UserCustomFood {
+  id                   String   @id
+  userId               String   @map("user_id") @db.Uuid
+  name                 String
+  category             String
+  subcategory          String
+  servingSize          Decimal  @map("serving_size")
+  servingUnit          String   @map("serving_unit")
+  calories             Int
+  protein              Decimal  @default(0)
+  carbs                Decimal  @default(0)
+  fats                 Decimal  @default(0)
+  sugar                Decimal  @default(0)
+  fibre                Decimal  @default(0)
+  sodium               Decimal  @default(0)
+  caffeineMg           Decimal? @map("caffeine_mg")
+  vitamins             String[]
+  minerals             String[]
+  tags                 String[]
+  synonyms             String[]
+  commonServingOptions Json     @map("common_serving_options")
+  preparationMethod    String   @map("preparation_method")
+  isDrink              Boolean  @default(false) @map("is_drink")
+  source               String   @default("custom")
+  verifiedStatus       String   @default("user") @map("verified_status")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@map("user_custom_foods")
+}
+
+model FavoriteFood {
+  userId    String   @map("user_id") @db.Uuid
+  foodId    String   @map("food_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@id([userId, foodId])
+  @@map("favorite_foods")
+}
+
+model MealTemplate {
+  id                String
+  name              String
+  category          String
+  mealType          String   @map("meal_type")
+  ingredientFoodIds String[] @map("ingredient_food_ids")
+  tags              String[]
+  description       String
+
+  @@id([id])
+  @@map("meal_templates")
+}
+
+model FoodLog {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  logDate           DateTime @map("log_date") @db.Date
+  status            String
+  mealType          String   @map("meal_type")
+  foodId            String?  @map("food_id")
+  foodName          String   @map("food_name")
+  serving           String
+  servingMultiplier Decimal  @default(1) @map("serving_multiplier")
+  calories          Int
+  protein           Decimal  @default(0)
+  carbs             Decimal  @default(0)
+  fats              Decimal  @default(0)
+  sugar             Decimal  @default(0)
+  fibre             Decimal  @default(0)
+  sodium            Decimal  @default(0)
+  caffeineMg        Decimal? @map("caffeine_mg")
+  keyMicronutrients String[] @map("key_micronutrients")
+  source            String
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("food_logs")
+}

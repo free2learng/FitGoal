@@ -103,17 +103,82 @@ create table if not exists public.exercise_library (
 );
 
 create table if not exists public.nutrition_foods (
-  id uuid primary key default uuid_generate_v4(),
+  id text primary key,
   name text not null,
-  category text not null check (category in ('protein', 'carbs', 'healthy-fats')),
-  serving text not null,
+  category text not null check (category in ('drinks', 'protein', 'carbs', 'healthy-fats', 'meat', 'fish', 'vegetables', 'fruits', 'grains', 'bread', 'rice-dishes', 'pasta', 'noodles', 'soups', 'sauces', 'snacks', 'desserts', 'fast-food', 'restaurant-meals', 'cultural-foods', 'supplements')),
+  subcategory text not null,
+  serving_size numeric not null,
+  serving_unit text not null,
   calories integer not null,
   protein numeric not null,
   carbs numeric not null,
   fats numeric not null,
-  key_micronutrients text[] not null default '{}',
+  sugar numeric not null default 0,
+  fibre numeric not null default 0,
+  sodium numeric not null default 0,
+  caffeine_mg numeric,
+  vitamins text[] not null default '{}',
+  minerals text[] not null default '{}',
+  tags text[] not null default '{}',
+  synonyms text[] not null default '{}',
+  common_serving_options jsonb not null default '[]'::jsonb,
+  preparation_method text not null default 'standard',
+  is_drink boolean not null default false,
+  is_custom boolean not null default false,
+  source text not null check (source in ('seed', 'custom', 'usda', 'open-food-facts', 'barcode', 'restaurant')),
+  verified_status text not null check (verified_status in ('verified', 'estimated', 'user')),
+  external_provider text,
+  external_id text,
+  barcode text,
+  brand_name text,
   fitness_benefit text not null,
-  meal_use text not null
+  meal_use text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.user_custom_foods (
+  id text primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  category text not null,
+  subcategory text not null,
+  serving_size numeric not null,
+  serving_unit text not null,
+  calories integer not null,
+  protein numeric not null default 0,
+  carbs numeric not null default 0,
+  fats numeric not null default 0,
+  sugar numeric not null default 0,
+  fibre numeric not null default 0,
+  sodium numeric not null default 0,
+  caffeine_mg numeric,
+  vitamins text[] not null default '{}',
+  minerals text[] not null default '{}',
+  tags text[] not null default '{}',
+  synonyms text[] not null default '{}',
+  common_serving_options jsonb not null default '[]'::jsonb,
+  preparation_method text not null default 'custom',
+  is_drink boolean not null default false,
+  source text not null default 'custom',
+  verified_status text not null default 'user',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.favorite_foods (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  food_id text not null,
+  created_at timestamptz not null default now(),
+  primary key (user_id, food_id)
+);
+
+create table if not exists public.meal_templates (
+  id text primary key,
+  name text not null,
+  category text not null,
+  meal_type text not null check (meal_type in ('breakfast', 'lunch', 'dinner', 'snack', 'drink', 'post-workout')),
+  ingredient_food_ids text[] not null default '{}',
+  tags text[] not null default '{}',
+  description text not null
 );
 
 create table if not exists public.micronutrients (
@@ -128,7 +193,8 @@ create table if not exists public.food_logs (
   user_id uuid not null references auth.users(id) on delete cascade,
   log_date date not null,
   status text not null check (status in ('eaten', 'planned')),
-  meal_type text not null check (meal_type in ('breakfast', 'lunch', 'dinner', 'snack', 'post-workout')),
+  meal_type text not null check (meal_type in ('breakfast', 'lunch', 'dinner', 'snack', 'drink', 'post-workout')),
+  food_id text,
   food_name text not null,
   serving text not null,
   serving_multiplier numeric not null default 1,
@@ -136,8 +202,12 @@ create table if not exists public.food_logs (
   protein numeric not null default 0,
   carbs numeric not null default 0,
   fats numeric not null default 0,
+  sugar numeric not null default 0,
+  fibre numeric not null default 0,
+  sodium numeric not null default 0,
+  caffeine_mg numeric,
   key_micronutrients text[] not null default '{}',
-  source text not null check (source in ('library', 'custom')),
+  source text not null check (source in ('library', 'custom', 'template', 'combination')),
   created_at timestamptz not null default now()
 );
 
@@ -151,6 +221,9 @@ alter table public.exercises enable row level security;
 alter table public.workout_programs enable row level security;
 alter table public.exercise_library enable row level security;
 alter table public.nutrition_foods enable row level security;
+alter table public.user_custom_foods enable row level security;
+alter table public.favorite_foods enable row level security;
+alter table public.meal_templates enable row level security;
 alter table public.micronutrients enable row level security;
 alter table public.food_logs enable row level security;
 
@@ -166,6 +239,9 @@ create policy "Anyone can read seed exercises" on public.exercises for select us
 create policy "Anyone can read workout programs" on public.workout_programs for select using (true);
 create policy "Anyone can read exercise library" on public.exercise_library for select using (true);
 create policy "Anyone can read nutrition foods" on public.nutrition_foods for select using (true);
+create policy "Users can manage own custom foods" on public.user_custom_foods for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Users can manage own favorite foods" on public.favorite_foods for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Anyone can read meal templates" on public.meal_templates for select using (true);
 create policy "Anyone can read micronutrients" on public.micronutrients for select using (true);
 create policy "Users can manage own food logs" on public.food_logs for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 

@@ -73,21 +73,69 @@ export type MealDay = {
   meals: Meal[];
 };
 
-export type FoodCategory = "protein" | "carbs" | "healthy-fats";
-export type MealType = "breakfast" | "lunch" | "dinner" | "snack" | "post-workout";
+export type FoodCategory =
+  | "drinks"
+  | "protein"
+  | "carbs"
+  | "healthy-fats"
+  | "meat"
+  | "fish"
+  | "vegetables"
+  | "fruits"
+  | "grains"
+  | "bread"
+  | "rice-dishes"
+  | "pasta"
+  | "noodles"
+  | "soups"
+  | "sauces"
+  | "snacks"
+  | "desserts"
+  | "fast-food"
+  | "restaurant-meals"
+  | "cultural-foods"
+  | "supplements";
+export type MealType = "breakfast" | "lunch" | "dinner" | "snack" | "drink" | "post-workout";
 export type FoodLogStatus = "eaten" | "planned";
+export type VerifiedStatus = "verified" | "estimated" | "user";
 
 export type FoodItem = {
+  id: string;
   name: string;
   category: FoodCategory;
-  serving: string;
+  subcategory: string;
+  servingSize: number;
+  servingUnit: string;
   calories: number;
   protein: number;
   carbs: number;
   fats: number;
-  keyMicronutrients: string[];
+  sugar: number;
+  fibre: number;
+  sodium: number;
+  caffeineMg?: number;
+  vitamins: string[];
+  minerals: string[];
+  tags: string[];
+  synonyms: string[];
+  commonServingOptions: { label: string; multiplier: number }[];
+  preparationMethod: string;
+  isDrink: boolean;
+  isCustom: boolean;
+  source: "seed" | "custom" | "usda" | "open-food-facts" | "barcode" | "restaurant";
+  verifiedStatus: VerifiedStatus;
   fitnessBenefit: string;
   mealUse: string;
+};
+
+export type MealTemplate = {
+  id: string;
+  name: string;
+  category: string;
+  mealType: MealType;
+  ingredientFoodIds: string[];
+  tags: string[];
+  description: string;
 };
 
 export type FoodLogEntry = {
@@ -102,8 +150,12 @@ export type FoodLogEntry = {
   protein: number;
   carbs: number;
   fats: number;
+  sugar: number;
+  fibre: number;
+  sodium: number;
+  caffeineMg?: number;
   keyMicronutrients: string[];
-  source: "library" | "custom";
+  source: "library" | "custom" | "template" | "combination";
 };
 
 export type MicronutrientItem = {
@@ -127,4 +179,6 @@ export type FitGoalState = {
   skippedDates: string[];
   progress: ProgressEntry[];
   foodLogs?: FoodLogEntry[];
+  customFoods?: FoodItem[];
+  favoriteFoodIds?: string[];
 };

@@ -16,6 +16,8 @@ FitGoal is a mobile-first MVP fitness app built with Next.js, TypeScript, Tailwi
 - MET-based calorie burn calculator with exercise demo cards
 - Nutrition food library at `/nutrition/food-library`
 - Manual food logging with eaten foods, planned foods, custom foods, serving size, and meal type
+- Expandable food database with everyday foods, drinks, cooked variations, meal templates, favourites, recents, and ingredient combinations
+- Food search supports exact/partial matches, synonyms, category/subcategory filters, and light typo tolerance
 - Dashboard calorie balance based only on user-logged foods
 - Supabase SQL schema and optional Prisma schema
 
@@ -55,7 +57,9 @@ npx prisma db push
 
 For this MVP, the frontend uses local seed data from `lib/seed-data.ts`. A practical next step is inserting those workouts into `public.workouts` and `public.exercises`, then reading user-specific profiles, workout logs, meal days, and progress entries from Supabase.
 
-The new program and nutrition seed data live in `lib/program-data.ts`. It includes the Stubborn Belly Fat Killer program, exercise demo metadata, nutrition foods, and vitamin/mineral reference data. `lib/calories.ts` contains the MET calorie calculator.
+The program and nutrition seed data live in `lib/program-data.ts`. It includes the Stubborn Belly Fat Killer program, exercise demo metadata, a larger API-ready nutrition food library, meal templates, and vitamin/mineral reference data. `lib/calories.ts` contains the MET calorie calculator.
+
+The food schema is designed for later integrations with USDA FoodData Central, Open Food Facts, barcode scanning, branded supermarket foods, and restaurant nutrition data through fields such as `source`, `external_provider`, `external_id`, `barcode`, `brand_name`, serving options, tags, synonyms, and verification status.
 
 ## Project structure
 
@@ -64,6 +68,7 @@ app/
   onboarding/       quiz flow
   dashboard/        daily plan, targets, meals
   workouts/[id]/    workout detail page
+  nutrition/        food library, logging, custom foods, combinations
   progress/         progress tracker
 components/         shared app shell and cards
 lib/                types, seed data, program data, calculators, generators, storage, Supabase client

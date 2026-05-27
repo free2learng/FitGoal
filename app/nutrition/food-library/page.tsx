@@ -2,87 +2,185 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Beef, Bone, Carrot, Check, HeartPulse, Plus, Trash2, Utensils, Wheat } from "lucide-react";
+import { ArrowLeft, Check, Coffee, Heart, Plus, Search, Star, Trash2, Utensils } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { todayKey } from "@/lib/generators";
-import { foodLogTotals, scaleFoodLog } from "@/lib/nutrition";
-import { micronutrients, nutritionFoods } from "@/lib/program-data";
-import { addFoodLog, convertPlannedFood, deleteFoodLog, loadState } from "@/lib/storage";
+import { foodLogTotals, foodToLogBase, scaleFoodLog, searchFoods } from "@/lib/nutrition";
+import { mealTemplates, nutritionFoods } from "@/lib/program-data";
+import { addFoodLog, convertPlannedFood, deleteFoodLog, loadState, saveCustomFood, toggleFavoriteFood } from "@/lib/storage";
 import { FitGoalState, FoodCategory, FoodItem, FoodLogEntry, FoodLogStatus, MealType } from "@/lib/types";
 
-const categories: { id: FoodCategory; title: string; icon: React.ReactNode; description: string }[] = [
-  { id: "protein", title: "Protein", icon: <Beef size={19} />, description: "Supports muscle repair, fullness, and recovery." },
-  { id: "carbs", title: "Carbs", icon: <Wheat size={19} />, description: "Fuel training and support consistent energy." },
-  { id: "healthy-fats", title: "Healthy fats", icon: <Utensils size={19} />, description: "Support hormones, joints, and meal satisfaction." }
+const categoryChips: { id: "all" | FoodCategory | string; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "drinks", label: "Drinks" },
+  { id: "tea", label: "Tea" },
+  { id: "coffee", label: "Coffee" },
+  { id: "milk", label: "Milk" },
+  { id: "plant-based milk", label: "Plant milk" },
+  { id: "protein", label: "Protein" },
+  { id: "eggs", label: "Eggs" },
+  { id: "meat", label: "Meat" },
+  { id: "fish", label: "Fish" },
+  { id: "grains", label: "Grains" },
+  { id: "bread", label: "Bread" },
+  { id: "rice-dishes", label: "Rice dishes" },
+  { id: "snacks", label: "Snacks" },
+  { id: "fast-food", label: "Fast food" }
 ];
 
-const mealTypes: MealType[] = ["breakfast", "lunch", "dinner", "snack", "post-workout"];
+const mealTypes: MealType[] = ["breakfast", "lunch", "dinner", "snack", "drink", "post-workout"];
+const customFoodCategories: FoodCategory[] = [
+  "drinks",
+  "protein",
+  "carbs",
+  "healthy-fats",
+  "meat",
+  "fish",
+  "vegetables",
+  "fruits",
+  "grains",
+  "bread",
+  "rice-dishes",
+  "pasta",
+  "noodles",
+  "soups",
+  "sauces",
+  "snacks",
+  "desserts",
+  "fast-food",
+  "restaurant-meals",
+  "cultural-foods",
+  "supplements"
+];
 
 export default function FoodLibraryPage() {
   const [state, setState] = useState<FitGoalState | null>(null);
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<string>("all");
   const [selectedFood, setSelectedFood] = useState<FoodItem>(nutritionFoods[0]);
   const [mealType, setMealType] = useState<MealType>("breakfast");
   const [status, setStatus] = useState<FoodLogStatus>("eaten");
-  const [servings, setServings] = useState(1);
+  const [servingMultiplier, setServingMultiplier] = useState(1);
   const [customOpen, setCustomOpen] = useState(false);
+  const [comboOpen, setComboOpen] = useState(false);
+  const [comboIds, setComboIds] = useState<string[]>([]);
 
   useEffect(() => {
     setState(loadState());
   }, []);
 
   const today = todayKey();
+  const allFoods = useMemo(() => [...nutritionFoods, ...(state?.customFoods ?? [])], [state?.customFoods]);
   const todaysLogs = (state?.foodLogs ?? []).filter((entry) => entry.date === today);
   const eatenLogs = todaysLogs.filter((entry) => entry.status === "eaten");
   const plannedLogs = todaysLogs.filter((entry) => entry.status === "planned");
   const eatenTotals = foodLogTotals(eatenLogs);
   const plannedTotals = foodLogTotals(plannedLogs);
+  const favoriteIds = state?.favoriteFoodIds ?? [];
+  const favoriteFoods = allFoods.filter((food) => favoriteIds.includes(food.id));
+  const commonDrinks = allFoods.filter((food) => food.isDrink).slice(0, 12);
+  const recentNames = Array.from(new Set([...(state?.foodLogs ?? [])].reverse().map((entry) => entry.foodName))).slice(0, 8);
+  const recentFoods = recentNames.map((name) => allFoods.find((food) => food.name === name)).filter(Boolean) as FoodItem[];
+  const mostLoggedFoods = Object.entries((state?.foodLogs ?? []).reduce<Record<string, number>>((counts, entry) => {
+    counts[entry.foodName] = (counts[entry.foodName] ?? 0) + 1;
+    return counts;
+  }, {})).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name]) => allFoods.find((food) => food.name === name)).filter(Boolean) as FoodItem[];
+  const filteredFoods = searchFoods(allFoods, query, category).slice(0, 80);
+  const comboCandidates = query
+    ? searchFoods(allFoods, query, category).slice(0, 30)
+    : allFoods.filter((food) => [
+      "black-tea",
+      "whole-milk",
+      "semi-skimmed-milk",
+      "sugar",
+      "boiled-egg",
+      "omelette",
+      "egg-whites",
+      "olive-oil",
+      "butter",
+      "cheddar-cheese",
+      "mixed-vegetables",
+      "wholegrain-bread",
+      "rice",
+      "chicken-breast",
+      "tuna",
+      "biscuits"
+    ].includes(food.id));
 
-  const filteredFoods = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    if (!term) return nutritionFoods;
-    return nutritionFoods.filter((food) => [food.name, food.category, food.keyMicronutrients.join(" ")].join(" ").toLowerCase().includes(term));
-  }, [query]);
+  function updateState(next: FitGoalState) {
+    setState(next);
+  }
 
-  function logLibraryFood() {
+  function logFood(food: FoodItem, override?: { status?: FoodLogStatus; mealType?: MealType; multiplier?: number; source?: FoodLogEntry["source"] }) {
     if (!state) return;
     const scaled = scaleFoodLog({
       date: today,
-      status,
-      mealType,
-      foodName: selectedFood.name,
-      serving: selectedFood.serving,
-      servingMultiplier: servings,
-      calories: selectedFood.calories,
-      protein: selectedFood.protein,
-      carbs: selectedFood.carbs,
-      fats: selectedFood.fats,
-      keyMicronutrients: selectedFood.keyMicronutrients,
-      source: "library"
+      status: override?.status ?? status,
+      mealType: override?.mealType ?? (food.isDrink ? "drink" : mealType),
+      servingMultiplier: override?.multiplier ?? servingMultiplier,
+      ...foodToLogBase(food),
+      source: override?.source ?? foodToLogBase(food).source
     });
-    setState(addFoodLog(state, scaled));
+    updateState(addFoodLog(state, scaled));
+  }
+
+  function logTemplate(templateId: string) {
+    const template = mealTemplates.find((item) => item.id === templateId);
+    if (!template || !state) return;
+    const foods = template.ingredientFoodIds.map((id) => allFoods.find((food) => food.id === id)).filter(Boolean) as FoodItem[];
+    if (!foods.length) return;
+    const combined = combineFoods(template.name, foods, template.tags);
+    const scaled = scaleFoodLog({ date: today, status, mealType: template.mealType, servingMultiplier: 1, ...foodToLogBase(combined), source: "template" });
+    updateState(addFoodLog(state, scaled));
+  }
+
+  function logCombination() {
+    if (!state) return;
+    const foods = comboIds.map((id) => allFoods.find((food) => food.id === id)).filter(Boolean) as FoodItem[];
+    if (!foods.length) return;
+    const combined = combineFoods(foods.map((food) => food.name).join(" + "), foods, ["combination"]);
+    const scaled = scaleFoodLog({ date: today, status, mealType, servingMultiplier: 1, ...foodToLogBase(combined), source: "combination" });
+    updateState(addFoodLog(state, scaled));
+    setComboIds([]);
+    setComboOpen(false);
   }
 
   function logCustomFood(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!state) return;
     const form = new FormData(event.currentTarget);
-    const micros = String(form.get("micronutrients") ?? "").split(",").map((item) => item.trim()).filter(Boolean);
-    const scaled = scaleFoodLog({
-      date: today,
-      status: String(form.get("status")) as FoodLogStatus,
-      mealType: String(form.get("mealType")) as MealType,
-      foodName: String(form.get("name")),
-      serving: String(form.get("serving") || "1 serving"),
-      servingMultiplier: Number(form.get("servings") || 1),
+    const customFood: FoodItem = {
+      id: `custom-${crypto.randomUUID()}`,
+      name: String(form.get("name")),
+      category: String(form.get("category")) as FoodCategory,
+      subcategory: String(form.get("subcategory") || "custom"),
+      servingSize: Number(form.get("servingSize") || 1),
+      servingUnit: String(form.get("servingUnit") || "serving"),
       calories: Number(form.get("calories") || 0),
       protein: Number(form.get("protein") || 0),
       carbs: Number(form.get("carbs") || 0),
       fats: Number(form.get("fats") || 0),
-      keyMicronutrients: micros,
-      source: "custom"
-    });
-    setState(addFoodLog(state, scaled));
+      sugar: Number(form.get("sugar") || 0),
+      fibre: Number(form.get("fibre") || 0),
+      sodium: Number(form.get("sodium") || 0),
+      caffeineMg: Number(form.get("caffeineMg") || 0) || undefined,
+      vitamins: splitList(String(form.get("vitamins") || "")),
+      minerals: splitList(String(form.get("minerals") || "")),
+      tags: splitList(String(form.get("tags") || "custom")),
+      synonyms: [],
+      commonServingOptions: [{ label: "1 serving", multiplier: 1 }, { label: "1/2 serving", multiplier: 0.5 }, { label: "2 servings", multiplier: 2 }],
+      preparationMethod: String(form.get("preparationMethod") || "custom"),
+      isDrink: form.get("isDrink") === "on",
+      isCustom: true,
+      source: "custom",
+      verifiedStatus: "user",
+      fitnessBenefit: "Custom food saved by you.",
+      mealUse: "Reuse from your personal food library."
+    };
+    const withCustom = saveCustomFood(state, customFood);
+    updateState(withCustom);
+    const scaled = scaleFoodLog({ date: today, status: String(form.get("status")) as FoodLogStatus, mealType: String(form.get("mealType")) as MealType, servingMultiplier: Number(form.get("servings") || 1), ...foodToLogBase(customFood), source: "custom" });
+    updateState(addFoodLog(withCustom, scaled));
     event.currentTarget.reset();
     setCustomOpen(false);
   }
@@ -96,26 +194,29 @@ export default function FoodLibraryPage() {
 
         <div className="rounded-lg bg-ink p-5 text-white">
           <p className="text-sm font-bold text-mint">Food logging</p>
-          <h1 className="mt-2 text-3xl font-black tracking-normal">Log what you eat.</h1>
-          <p className="mt-3 text-sm leading-6 text-white/75">Food intake is based only on what you add here. Plan meals ahead, then convert them to eaten after you eat.</p>
+          <h1 className="mt-2 text-3xl font-black tracking-normal">Find, build, or save foods.</h1>
+          <p className="mt-3 text-sm leading-6 text-white/75">Search real everyday foods, drinks, cooked variations, templates, custom foods, favourites and combinations.</p>
         </div>
 
         <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
-          <p className="flex items-center gap-2 text-sm font-bold text-leaf"><Plus size={17} /> Add from food library</p>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search chicken, yogurt, banana..." className="mt-3 h-12 w-full rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-leaf" />
-          <div className="mt-3 max-h-56 space-y-2 overflow-y-auto rounded-lg bg-zinc-50 p-2">
-            {filteredFoods.map((food) => (
-              <button key={food.name} type="button" onClick={() => setSelectedFood(food)} className={`w-full rounded-lg p-3 text-left ${selectedFood.name === food.name ? "bg-ink text-white" : "bg-white text-ink"}`}>
-                <span className="block font-black">{food.name}</span>
-                <span className={`text-xs ${selectedFood.name === food.name ? "text-white/70" : "text-zinc-500"}`}>{food.calories} cal - {food.protein}g protein - {food.serving}</span>
+          <label className="relative block">
+            <Search className="absolute left-3 top-3.5 text-zinc-400" size={18} />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search coffee, tea, egg, latte..." className="h-12 w-full rounded-lg border border-zinc-200 pl-10 pr-3 text-sm font-bold outline-none focus:border-leaf" />
+          </label>
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            {categoryChips.map((chip) => (
+              <button key={chip.id} type="button" onClick={() => setCategory(chip.id)} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-black ${category === chip.id ? "bg-ink text-white" : "bg-zinc-100 text-zinc-700"}`}>
+                {chip.label}
               </button>
             ))}
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <label>
-              <span className="mb-2 block text-sm font-black text-ink">Servings</span>
-              <input type="number" min="0.25" step="0.25" value={servings} onChange={(event) => setServings(Number(event.target.value))} className="h-11 w-full rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-leaf" />
+              <span className="mb-2 block text-sm font-black text-ink">Serving</span>
+              <select value={servingMultiplier} onChange={(event) => setServingMultiplier(Number(event.target.value))} className="h-11 w-full rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-leaf">
+                {selectedFood.commonServingOptions.map((option) => <option key={option.label} value={option.multiplier}>{option.label}</option>)}
+              </select>
             </label>
             <label>
               <span className="mb-2 block text-sm font-black text-ink">Meal type</span>
@@ -129,87 +230,159 @@ export default function FoodLibraryPage() {
             <button type="button" onClick={() => setStatus("eaten")} className={`h-11 rounded-lg text-sm font-black ${status === "eaten" ? "bg-leaf text-white" : "border border-zinc-200 text-ink"}`}>Eaten</button>
             <button type="button" onClick={() => setStatus("planned")} className={`h-11 rounded-lg text-sm font-black ${status === "planned" ? "bg-sky text-ink" : "border border-zinc-200 text-ink"}`}>Planned</button>
           </div>
-
-          <button onClick={logLibraryFood} disabled={!state} className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-ink text-sm font-black text-white disabled:opacity-50">
-            <Plus size={18} /> Add {status} food
-          </button>
         </article>
 
-        <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
-          <button onClick={() => setCustomOpen(!customOpen)} className="flex w-full items-center justify-between text-left">
-            <span>
-              <span className="block text-sm font-bold text-leaf">Custom food</span>
-              <span className="text-xl font-black text-ink">Add something not listed</span>
-            </span>
-            <Plus size={20} />
-          </button>
-          {customOpen && (
-            <form onSubmit={logCustomFood} className="mt-4 grid gap-3">
-              <Input name="name" label="Food name" required />
-              <Input name="serving" label="Serving label" placeholder="1 bowl, 150g, 1 bar" />
-              <div className="grid grid-cols-2 gap-3">
-                <Input name="servings" label="Servings" type="number" min="0.25" step="0.25" defaultValue="1" required />
-                <Select name="mealType" label="Meal type" options={mealTypes} />
-                <Input name="calories" label="Calories" type="number" min="0" required />
-                <Input name="protein" label="Protein g" type="number" min="0" required />
-                <Input name="carbs" label="Carbs g" type="number" min="0" required />
-                <Input name="fats" label="Fats g" type="number" min="0" required />
-              </div>
-              <Input name="micronutrients" label="Vitamins/minerals" placeholder="Vitamin C, Iron, Potassium" />
-              <select name="status" className="h-11 rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-leaf">
-                <option value="eaten">Eaten</option>
-                <option value="planned">Planned</option>
-              </select>
-              <button className="h-12 rounded-lg bg-ink text-sm font-black text-white">Save custom food</button>
-            </form>
-          )}
-        </article>
-
-        <LogSummary title="Eaten today" logs={eatenLogs} totals={eatenTotals} state={state} onChange={setState} />
-        <LogSummary title="Planned later" logs={plannedLogs} totals={plannedTotals} state={state} onChange={setState} planned />
-
-        {categories.map((category) => (
-          <article key={category.id} className="space-y-3">
-            <div>
-              <h2 className="flex items-center gap-2 text-2xl font-black text-ink">
-                <span className="grid h-9 w-9 place-items-center rounded-lg bg-mint/15 text-leaf">{category.icon}</span>
-                {category.title}
-              </h2>
-              <p className="mt-1 text-sm text-zinc-600">{category.description}</p>
-            </div>
-            <div className="space-y-3">
-              {nutritionFoods.filter((food) => food.category === category.id).map((food) => (
-                <FoodLibraryCard key={food.name} food={food} />
-              ))}
-            </div>
-          </article>
-        ))}
+        <FoodRail title="Common drinks" icon={<Coffee size={17} />} foods={commonDrinks} onPick={setSelectedFood} onLog={logFood} state={state} onState={updateState} />
+        <FoodRail title="Recent foods" foods={recentFoods} onPick={setSelectedFood} onLog={logFood} state={state} onState={updateState} empty="No recent foods yet." />
+        <FoodRail title="Favourites" icon={<Heart size={17} />} foods={favoriteFoods} onPick={setSelectedFood} onLog={logFood} state={state} onState={updateState} empty="Tap the star on a food to favourite it." />
+        <FoodRail title="Most logged" foods={mostLoggedFoods} onPick={setSelectedFood} onLog={logFood} state={state} onState={updateState} empty="Most logged foods will appear here." />
 
         <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
-          <h2 className="flex items-center gap-2 text-2xl font-black text-ink">
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-peach/20 text-ink"><Carrot size={19} /></span>
-            Vitamins and minerals
-          </h2>
-          <div className="mt-4 grid gap-3">
-            {micronutrients.map((item) => (
-              <div key={item.name} className="rounded-lg bg-zinc-50 p-3">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 grid h-8 w-8 place-items-center rounded-lg bg-white text-leaf shadow-sm">
-                    {item.name === "Calcium" ? <Bone size={16} /> : <HeartPulse size={16} />}
-                  </span>
-                  <div>
-                    <h3 className="font-black text-ink">{item.name}</h3>
-                    <p className="mt-1 text-sm leading-5 text-zinc-600">{item.whyItMatters}</p>
-                    <p className="mt-2 text-xs font-bold uppercase tracking-normal text-zinc-500">Foods</p>
-                    <p className="text-sm font-semibold text-zinc-700">{item.foods.join(", ")}</p>
-                  </div>
-                </div>
-              </div>
+          <h2 className="text-xl font-black text-ink">Search results</h2>
+          <div className="mt-3 max-h-[560px] space-y-2 overflow-y-auto">
+            {filteredFoods.map((food) => (
+              <FoodSearchRow key={food.id} food={food} selected={selectedFood.id === food.id} favorite={favoriteIds.includes(food.id)} onPick={setSelectedFood} onLog={logFood} state={state} onState={updateState} />
             ))}
           </div>
         </article>
+
+        <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
+          <h2 className="text-xl font-black text-ink">Meal templates</h2>
+          <div className="mt-3 grid gap-2">
+            {mealTemplates.map((template) => (
+              <button key={template.id} onClick={() => logTemplate(template.id)} disabled={!state} className="rounded-lg bg-zinc-50 p-3 text-left disabled:opacity-50">
+                <span className="block font-black text-ink">{template.name}</span>
+                <span className="text-sm text-zinc-600">{template.description}</span>
+              </button>
+            ))}
+          </div>
+        </article>
+
+        <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
+          <button onClick={() => setComboOpen(!comboOpen)} className="flex w-full items-center justify-between text-left">
+            <span>
+              <span className="block text-sm font-bold text-leaf">Food combinations</span>
+              <span className="text-xl font-black text-ink">Build from ingredients</span>
+            </span>
+            <Plus size={20} />
+          </button>
+          {comboOpen && (
+            <div className="mt-4 space-y-3">
+              <p className="text-sm leading-6 text-zinc-600">Examples: tea with milk and sugar, or omelette with eggs, oil, vegetables and cheese.</p>
+              <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg bg-zinc-50 p-2">
+                {comboCandidates.map((food) => (
+                  <label key={food.id} className="flex items-center gap-3 rounded-lg bg-white p-3">
+                    <input type="checkbox" checked={comboIds.includes(food.id)} onChange={() => setComboIds((ids) => ids.includes(food.id) ? ids.filter((id) => id !== food.id) : [...ids, food.id])} />
+                    <span>
+                      <span className="block font-black text-ink">{food.name}</span>
+                      <span className="text-xs text-zinc-500">{food.calories} cal - {food.servingSize}{food.servingUnit}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <button onClick={logCombination} disabled={!state || comboIds.length === 0} className="h-12 w-full rounded-lg bg-ink text-sm font-black text-white disabled:opacity-50">Log combination</button>
+            </div>
+          )}
+        </article>
+
+        <CustomFoodForm open={customOpen} setOpen={setCustomOpen} onSubmit={logCustomFood} />
+
+        <LogSummary title="Eaten today" logs={eatenLogs} totals={eatenTotals} state={state} onChange={updateState} />
+        <LogSummary title="Planned later" logs={plannedLogs} totals={plannedTotals} state={state} onChange={updateState} planned />
       </section>
     </AppShell>
+  );
+}
+
+function FoodRail({ title, icon, foods, onPick, onLog, state, onState, empty = "Nothing here yet." }: { title: string; icon?: React.ReactNode; foods: FoodItem[]; onPick: (food: FoodItem) => void; onLog: (food: FoodItem) => void; state: FitGoalState | null; onState: (state: FitGoalState) => void; empty?: string }) {
+  return (
+    <article className="rounded-lg border border-zinc-100 bg-white p-4 shadow-sm">
+      <h2 className="flex items-center gap-2 text-lg font-black text-ink">{icon}{title}</h2>
+      {foods.length === 0 ? <p className="mt-2 text-sm font-semibold text-zinc-500">{empty}</p> : (
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+          {foods.map((food) => (
+            <FoodChip key={food.id} food={food} onPick={onPick} onLog={onLog} state={state} onState={onState} />
+          ))}
+        </div>
+      )}
+    </article>
+  );
+}
+
+function FoodChip({ food, onPick, onLog, state, onState }: { food: FoodItem; onPick: (food: FoodItem) => void; onLog: (food: FoodItem) => void; state: FitGoalState | null; onState: (state: FitGoalState) => void }) {
+  const isFavorite = Boolean(state?.favoriteFoodIds?.includes(food.id));
+  return (
+    <div className="min-w-44 shrink-0 rounded-lg bg-zinc-50 p-3">
+      <button onClick={() => onPick(food)} className="w-full text-left">
+        <span className="block font-black text-ink">{food.name}</span>
+        <span className="text-xs text-zinc-500">{food.calories} cal - {food.protein}g protein</span>
+      </button>
+      <div className="mt-2 flex gap-2">
+        <button onClick={() => onLog(food)} disabled={!state} className="flex-1 rounded-lg bg-ink py-2 text-xs font-black text-white disabled:opacity-50">Log</button>
+        {state && <button onClick={() => onState(toggleFavoriteFood(state, food.id))} className={`grid h-8 w-8 place-items-center rounded-lg ${isFavorite ? "bg-peach/30 text-ink" : "bg-white text-zinc-500"}`} aria-label="Favourite food"><Star size={15} /></button>}
+      </div>
+    </div>
+  );
+}
+
+function FoodSearchRow({ food, selected, favorite, onPick, onLog, state, onState }: { food: FoodItem; selected: boolean; favorite: boolean; onPick: (food: FoodItem) => void; onLog: (food: FoodItem) => void; state: FitGoalState | null; onState: (state: FitGoalState) => void }) {
+  return (
+    <div className={`rounded-lg p-3 ${selected ? "bg-ink text-white" : "bg-zinc-50 text-ink"}`}>
+      <button onClick={() => onPick(food)} className="w-full text-left">
+        <span className="block font-black">{food.name}</span>
+        <span className={`text-xs ${selected ? "text-white/70" : "text-zinc-500"}`}>{food.subcategory} - {food.calories} cal - {food.servingSize}{food.servingUnit}</span>
+        <span className={`mt-1 block text-xs ${selected ? "text-white/70" : "text-zinc-500"}`}>{food.verifiedStatus} - {food.source} - {food.tags.slice(0, 4).join(", ")}</span>
+      </button>
+      <div className="mt-2 grid grid-cols-[1fr_40px] gap-2">
+        <button onClick={() => onLog(food)} disabled={!state} className={`h-10 rounded-lg text-xs font-black disabled:opacity-50 ${selected ? "bg-mint text-ink" : "bg-ink text-white"}`}>Log selected</button>
+        {state && <button onClick={() => onState(toggleFavoriteFood(state, food.id))} className={`grid h-10 place-items-center rounded-lg ${favorite ? "bg-peach/30 text-ink" : "bg-white text-zinc-500"}`} aria-label="Favourite food"><Star size={16} /></button>}
+      </div>
+    </div>
+  );
+}
+
+function CustomFoodForm({ open, setOpen, onSubmit }: { open: boolean; setOpen: (open: boolean) => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
+  return (
+    <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
+      <button onClick={() => setOpen(!open)} className="flex w-full items-center justify-between text-left">
+        <span>
+          <span className="block text-sm font-bold text-leaf">Custom food</span>
+          <span className="text-xl font-black text-ink">Add missing food</span>
+        </span>
+        <Plus size={20} />
+      </button>
+      {open && (
+        <form onSubmit={onSubmit} className="mt-4 grid gap-3">
+          <Input name="name" label="Food name" required />
+          <div className="grid grid-cols-2 gap-3">
+            <Select name="category" label="Category" options={customFoodCategories} />
+            <Input name="subcategory" label="Subcategory" placeholder="brand, cooked style" />
+            <Input name="servingSize" label="Serving size" type="number" min="0" step="0.1" defaultValue="1" required />
+            <Input name="servingUnit" label="Unit" placeholder="cup, g, ml, slice" required />
+            <Input name="servings" label="Servings to log" type="number" min="0.25" step="0.25" defaultValue="1" required />
+            <Select name="mealType" label="Meal type" options={mealTypes} />
+            <Input name="calories" label="Calories" type="number" min="0" required />
+            <Input name="protein" label="Protein g" type="number" min="0" required />
+            <Input name="carbs" label="Carbs g" type="number" min="0" required />
+            <Input name="fats" label="Fats g" type="number" min="0" required />
+            <Input name="sugar" label="Sugar g" type="number" min="0" defaultValue="0" />
+            <Input name="fibre" label="Fibre g" type="number" min="0" defaultValue="0" />
+            <Input name="sodium" label="Sodium mg" type="number" min="0" defaultValue="0" />
+            <Input name="caffeineMg" label="Caffeine mg" type="number" min="0" />
+          </div>
+          <Input name="vitamins" label="Vitamins" placeholder="Vitamin C, Vitamin D" />
+          <Input name="minerals" label="Minerals" placeholder="Iron, Calcium, Potassium" />
+          <Input name="tags" label="Tags/synonyms" placeholder="brand, takeaway, drink" />
+          <Input name="preparationMethod" label="Preparation" placeholder="boiled, fried, oat milk, restaurant estimate" />
+          <label className="flex items-center gap-2 text-sm font-black text-ink"><input name="isDrink" type="checkbox" /> Drink</label>
+          <select name="status" className="h-11 rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-leaf">
+            <option value="eaten">Eaten</option>
+            <option value="planned">Planned</option>
+          </select>
+          <button className="h-12 rounded-lg bg-ink text-sm font-black text-white">Save to my foods and log</button>
+        </form>
+      )}
+    </article>
   );
 }
 
@@ -220,8 +393,8 @@ function LogSummary({ title, logs, totals, state, onChange, planned = false }: {
       <div className="mt-3 grid grid-cols-4 gap-2 text-center text-xs font-black">
         <Macro label="Cal" value={totals.calories} />
         <Macro label="Pro" value={`${totals.protein}g`} />
-        <Macro label="Carb" value={`${totals.carbs}g`} />
-        <Macro label="Fat" value={`${totals.fats}g`} />
+        <Macro label="Sugar" value={`${totals.sugar}g`} />
+        <Macro label="Caff" value={`${totals.caffeineMg}mg`} />
       </div>
       <div className="mt-3 space-y-2">
         {logs.length === 0 ? (
@@ -232,58 +405,17 @@ function LogSummary({ title, logs, totals, state, onChange, planned = false }: {
               <div>
                 <p className="font-black text-ink">{log.foodName}</p>
                 <p className="text-xs font-semibold text-zinc-500">{log.mealType} - {log.servingMultiplier}x {log.serving}</p>
-                <p className="text-sm text-zinc-600">{log.calories} cal - {log.protein}g protein</p>
+                <p className="text-sm text-zinc-600">{log.calories} cal - {log.protein}g protein - {log.source}</p>
               </div>
               <div className="flex gap-2">
-                {planned && state && (
-                  <button onClick={() => onChange(convertPlannedFood(state, log.id))} className="grid h-9 w-9 place-items-center rounded-lg bg-leaf text-white" aria-label="Mark eaten">
-                    <Check size={16} />
-                  </button>
-                )}
-                {state && (
-                  <button onClick={() => onChange(deleteFoodLog(state, log.id))} className="grid h-9 w-9 place-items-center rounded-lg bg-white text-zinc-500" aria-label="Delete food">
-                    <Trash2 size={16} />
-                  </button>
-                )}
+                {planned && state && <button onClick={() => onChange(convertPlannedFood(state, log.id))} className="grid h-9 w-9 place-items-center rounded-lg bg-leaf text-white" aria-label="Mark eaten"><Check size={16} /></button>}
+                {state && <button onClick={() => onChange(deleteFoodLog(state, log.id))} className="grid h-9 w-9 place-items-center rounded-lg bg-white text-zinc-500" aria-label="Delete food"><Trash2 size={16} /></button>}
               </div>
             </div>
           </div>
         ))}
       </div>
     </article>
-  );
-}
-
-function FoodLibraryCard({ food }: { food: FoodItem }) {
-  return (
-    <div className="rounded-lg border border-zinc-100 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-black text-ink">{food.name}</h3>
-          <p className="text-sm text-zinc-500">{food.serving}</p>
-        </div>
-        <div className="rounded-lg bg-zinc-50 px-3 py-2 text-right">
-          <p className="text-xs font-bold text-zinc-500">Calories</p>
-          <p className="text-lg font-black">{food.calories}</p>
-        </div>
-      </div>
-      <div className="mt-3 grid grid-cols-3 gap-2 text-center text-sm font-black">
-        <Macro label="Protein" value={`${food.protein}g`} />
-        <Macro label="Carbs" value={`${food.carbs}g`} />
-        <Macro label="Fats" value={`${food.fats}g`} />
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {food.keyMicronutrients.map((nutrient) => (
-          <span key={nutrient} className="rounded-lg bg-sky/15 px-2 py-1 text-xs font-bold text-ink">
-            {nutrient}
-          </span>
-        ))}
-      </div>
-      <div className="mt-3 grid gap-2 rounded-lg bg-zinc-50 p-3 text-sm leading-5 text-zinc-700">
-        <p><span className="font-black text-ink">Why it helps:</span> {food.fitnessBenefit}</p>
-        <p><span className="font-black text-ink">Meal use:</span> {food.mealUse}</p>
-      </div>
-    </div>
   );
 }
 
@@ -315,4 +447,41 @@ function Macro({ label, value }: { label: string; value: string | number }) {
       <p>{value}</p>
     </div>
   );
+}
+
+function splitList(value: string) {
+  return value.split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+function combineFoods(name: string, foods: FoodItem[], tags: string[]): FoodItem {
+  const vitamins = Array.from(new Set(foods.flatMap((food) => food.vitamins)));
+  const minerals = Array.from(new Set(foods.flatMap((food) => food.minerals)));
+  return {
+    id: `combo-${foods.map((food) => food.id).join("-")}`,
+    name,
+    category: "restaurant-meals",
+    subcategory: "combination",
+    servingSize: 1,
+    servingUnit: "combo",
+    calories: foods.reduce((sum, food) => sum + food.calories, 0),
+    protein: foods.reduce((sum, food) => sum + food.protein, 0),
+    carbs: foods.reduce((sum, food) => sum + food.carbs, 0),
+    fats: foods.reduce((sum, food) => sum + food.fats, 0),
+    sugar: foods.reduce((sum, food) => sum + food.sugar, 0),
+    fibre: foods.reduce((sum, food) => sum + food.fibre, 0),
+    sodium: foods.reduce((sum, food) => sum + food.sodium, 0),
+    caffeineMg: foods.reduce((sum, food) => sum + (food.caffeineMg ?? 0), 0),
+    vitamins,
+    minerals,
+    tags,
+    synonyms: [],
+    commonServingOptions: [{ label: "1 combo", multiplier: 1 }, { label: "1/2 combo", multiplier: 0.5 }],
+    preparationMethod: "built from ingredients",
+    isDrink: foods.every((food) => food.isDrink),
+    isCustom: false,
+    source: "custom",
+    verifiedStatus: "estimated",
+    fitnessBenefit: "Built from selected ingredients so the estimate is more personal.",
+    mealUse: "Use when a ready-made food is missing."
+  };
 }

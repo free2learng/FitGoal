@@ -1,6 +1,6 @@
 "use client";
 
-import { FitGoalState, FoodLogEntry, OnboardingProfile, ProgressEntry } from "@/lib/types";
+import { FitGoalState, FoodItem, FoodLogEntry, OnboardingProfile, ProgressEntry } from "@/lib/types";
 import { initialProgress, todayKey } from "@/lib/generators";
 
 const key = "fitgoal-state";
@@ -10,7 +10,12 @@ export function loadState(): FitGoalState | null {
   const raw = window.localStorage.getItem(key);
   if (!raw) return null;
   const parsed = JSON.parse(raw) as FitGoalState;
-  return { ...parsed, foodLogs: parsed.foodLogs ?? [] };
+  return {
+    ...parsed,
+    foodLogs: parsed.foodLogs ?? [],
+    customFoods: parsed.customFoods ?? [],
+    favoriteFoodIds: parsed.favoriteFoodIds ?? []
+  };
 }
 
 export function saveState(state: FitGoalState) {
@@ -18,7 +23,7 @@ export function saveState(state: FitGoalState) {
 }
 
 export function createState(profile: OnboardingProfile): FitGoalState {
-  const state = { profile, completedWorkoutDates: [], skippedDates: [], progress: initialProgress(profile), foodLogs: [] };
+  const state = { profile, completedWorkoutDates: [], skippedDates: [], progress: initialProgress(profile), foodLogs: [], customFoods: [], favoriteFoodIds: [] };
   saveState(state);
   return state;
 }
@@ -62,6 +67,22 @@ export function convertPlannedFood(state: FitGoalState, entryId: string) {
 
 export function deleteFoodLog(state: FitGoalState, entryId: string) {
   const next = { ...state, foodLogs: (state.foodLogs ?? []).filter((entry) => entry.id !== entryId) };
+  saveState(next);
+  return next;
+}
+
+export function saveCustomFood(state: FitGoalState, food: FoodItem) {
+  const customFoods = [food, ...(state.customFoods ?? []).filter((item) => item.id !== food.id)];
+  const next = { ...state, customFoods };
+  saveState(next);
+  return next;
+}
+
+export function toggleFavoriteFood(state: FitGoalState, foodId: string) {
+  const existing = new Set(state.favoriteFoodIds ?? []);
+  if (existing.has(foodId)) existing.delete(foodId);
+  else existing.add(foodId);
+  const next = { ...state, favoriteFoodIds: Array.from(existing) };
   saveState(next);
   return next;
 }
