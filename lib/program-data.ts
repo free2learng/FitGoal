@@ -217,7 +217,7 @@ function food(input: {
   };
 }
 
-export const nutritionFoods: FoodItem[] = [
+const baseNutritionFoods: FoodItem[] = [
   food({ id: "black-tea", name: "Black tea", category: "drinks", subcategory: "tea", servingSize: 250, servingUnit: "ml", calories: 2, caffeineMg: 45, tags: ["tea", "drink", "hot drink"], synonyms: ["tea", "plain tea"], commonServingOptions: [serving("small mug 200ml", 0.8), serving("mug 250ml", 1), serving("large mug 350ml", 1.4)], preparationMethod: "brewed without milk or sugar", isDrink: true, fitnessBenefit: "Very low calorie drink with caffeine.", mealUse: "Log as a drink." }),
   food({ id: "green-tea", name: "Green tea", category: "drinks", subcategory: "tea", servingSize: 250, servingUnit: "ml", calories: 2, caffeineMg: 30, tags: ["tea", "drink"], synonyms: ["sencha", "green"], preparationMethod: "brewed", isDrink: true }),
   food({ id: "herbal-tea", name: "Herbal tea", category: "drinks", subcategory: "tea", servingSize: 250, servingUnit: "ml", calories: 2, caffeineMg: 0, tags: ["tea", "drink", "caffeine free"], synonyms: ["peppermint tea", "camomile tea"], preparationMethod: "brewed", isDrink: true }),
@@ -341,6 +341,107 @@ export const nutritionFoods: FoodItem[] = [
   food({ id: "coffee-toast", name: "Coffee and toast", category: "restaurant-meals", subcategory: "breakfast", servingSize: 1, servingUnit: "meal", calories: 195, protein: 6, carbs: 33, fats: 4, sugar: 4, fibre: 2, sodium: 310, caffeineMg: 95, tags: ["breakfast", "coffee", "toast"] }),
   food({ id: "tea-biscuits", name: "Tea with biscuits", category: "snacks", subcategory: "tea snack", servingSize: 1, servingUnit: "snack", calories: 142, protein: 2, carbs: 20, fats: 6, sugar: 9, fibre: 1, sodium: 110, caffeineMg: 45, tags: ["tea", "biscuits", "snack"] })
 ];
+
+const vegetableSeeds = [
+  { name: "Cauliflower", calories: 25, protein: 2, carbs: 5, fibre: 2, vitamins: ["Vitamin C"], minerals: ["Potassium"], synonyms: ["cauli"] },
+  { name: "Broccoli", calories: 35, protein: 2, carbs: 7, fibre: 3, vitamins: ["Vitamin C", "Vitamin A"], minerals: ["Potassium"] },
+  { name: "Spinach", calories: 23, protein: 3, carbs: 4, fibre: 2, vitamins: ["Vitamin A", "Vitamin C"], minerals: ["Iron", "Magnesium"] },
+  { name: "Kale", calories: 35, protein: 3, carbs: 5, fibre: 4, vitamins: ["Vitamin A", "Vitamin C"], minerals: ["Calcium"] },
+  { name: "Lettuce", calories: 15, protein: 1, carbs: 3, fibre: 1, vitamins: ["Vitamin A"], minerals: ["Potassium"] },
+  { name: "Cabbage", calories: 25, protein: 1, carbs: 6, fibre: 3, vitamins: ["Vitamin C"], minerals: ["Potassium"] },
+  { name: "Carrots", calories: 41, protein: 1, carbs: 10, sugar: 5, fibre: 3, vitamins: ["Vitamin A"], minerals: ["Potassium"], synonyms: ["carrot"] },
+  { name: "Peas", calories: 84, protein: 5, carbs: 15, sugar: 6, fibre: 5, vitamins: ["Vitamin C"], minerals: ["Iron"] },
+  { name: "Sweetcorn", calories: 96, protein: 3, carbs: 21, sugar: 5, fibre: 2, vitamins: ["Vitamin C"], minerals: ["Magnesium"], synonyms: ["corn"] },
+  { name: "Cucumber", calories: 15, protein: 1, carbs: 4, fibre: 1, vitamins: ["Vitamin C"], minerals: ["Potassium"] },
+  { name: "Tomato", calories: 18, protein: 1, carbs: 4, sugar: 3, fibre: 1, vitamins: ["Vitamin C", "Vitamin A"], minerals: ["Potassium"], synonyms: ["tomatoes"] },
+  { name: "Onion", calories: 40, protein: 1, carbs: 9, sugar: 4, fibre: 2, vitamins: ["Vitamin C"], minerals: ["Potassium"], synonyms: ["onions"] },
+  { name: "Garlic", calories: 45, protein: 2, carbs: 10, fibre: 1, vitamins: ["Vitamin C"], minerals: ["Calcium"] },
+  { name: "Mushrooms", calories: 22, protein: 3, carbs: 3, fibre: 1, vitamins: ["Vitamin D"], minerals: ["Potassium"], synonyms: ["mushroom"] },
+  { name: "Peppers", calories: 31, protein: 1, carbs: 6, sugar: 4, fibre: 2, vitamins: ["Vitamin C", "Vitamin A"], minerals: ["Potassium"], synonyms: ["bell pepper", "capsicum"] },
+  { name: "Courgette", calories: 17, protein: 1, carbs: 3, fibre: 1, vitamins: ["Vitamin C"], minerals: ["Potassium"], synonyms: ["zucchini"] },
+  { name: "Aubergine", calories: 25, protein: 1, carbs: 6, fibre: 3, vitamins: ["Vitamin C"], minerals: ["Potassium"], synonyms: ["eggplant"] },
+  { name: "Asparagus", calories: 20, protein: 2, carbs: 4, fibre: 2, vitamins: ["Vitamin A", "Vitamin C"], minerals: ["Iron"] },
+  { name: "Green beans", calories: 35, protein: 2, carbs: 8, fibre: 3, vitamins: ["Vitamin C"], minerals: ["Potassium"] },
+  { name: "Beetroot", calories: 43, protein: 2, carbs: 10, sugar: 7, fibre: 3, vitamins: ["Vitamin C"], minerals: ["Potassium"] },
+  { name: "Celery", calories: 16, protein: 1, carbs: 3, fibre: 2, vitamins: ["Vitamin C"], minerals: ["Potassium"] },
+  { name: "Pumpkin", calories: 26, protein: 1, carbs: 7, fibre: 1, vitamins: ["Vitamin A"], minerals: ["Potassium"] },
+  { name: "Butternut squash", calories: 45, protein: 1, carbs: 12, sugar: 2, fibre: 2, vitamins: ["Vitamin A", "Vitamin C"], minerals: ["Potassium"] },
+  { name: "Radish", calories: 16, protein: 1, carbs: 3, fibre: 2, vitamins: ["Vitamin C"], minerals: ["Potassium"] },
+  { name: "Turnip", calories: 28, protein: 1, carbs: 6, fibre: 2, vitamins: ["Vitamin C"], minerals: ["Potassium"] },
+  { name: "Okra", calories: 33, protein: 2, carbs: 7, fibre: 3, vitamins: ["Vitamin C"], minerals: ["Magnesium"] },
+  { name: "Leeks", calories: 61, protein: 2, carbs: 14, fibre: 2, vitamins: ["Vitamin A", "Vitamin C"], minerals: ["Iron"], synonyms: ["leek"] },
+  { name: "Spring onion", calories: 32, protein: 2, carbs: 7, fibre: 3, vitamins: ["Vitamin C"], minerals: ["Potassium"], synonyms: ["scallion", "green onion"] },
+  { name: "Brussels sprouts", calories: 43, protein: 3, carbs: 9, fibre: 4, vitamins: ["Vitamin C"], minerals: ["Potassium"], synonyms: ["brussel sprouts"] }
+];
+
+const vegetableMethods = [
+  { prefix: "Raw", caloriesAdd: 0, fatsAdd: 0, tag: "raw" },
+  { prefix: "Boiled", caloriesAdd: 0, fatsAdd: 0, tag: "boiled" },
+  { prefix: "Steamed", caloriesAdd: 0, fatsAdd: 0, tag: "steamed" },
+  { prefix: "Roasted", caloriesAdd: 25, fatsAdd: 2, tag: "roasted" },
+  { prefix: "Grilled", caloriesAdd: 15, fatsAdd: 1, tag: "grilled" },
+  { prefix: "Stir-fried", caloriesAdd: 45, fatsAdd: 4, tag: "stir fried" },
+  { prefix: "Cooked with oil", caloriesAdd: 60, fatsAdd: 6, tag: "with oil" },
+  { prefix: "Cooked without oil", caloriesAdd: 5, fatsAdd: 0, tag: "without oil" }
+];
+
+const vegetableVariationFoods = vegetableSeeds.flatMap((veg) =>
+  vegetableMethods.map((method) => food({
+    id: `${method.tag.replace(/\s+/g, "-")}-${veg.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
+    name: `${method.prefix} ${veg.name.toLowerCase()}`,
+    category: "vegetables",
+    subcategory: veg.name.toLowerCase(),
+    servingSize: 100,
+    servingUnit: "g",
+    calories: veg.calories + method.caloriesAdd,
+    protein: veg.protein,
+    carbs: veg.carbs,
+    fats: method.fatsAdd,
+    sugar: veg.sugar ?? 0,
+    fibre: veg.fibre,
+    sodium: method.tag === "with oil" ? 40 : 20,
+    vitamins: veg.vitamins,
+    minerals: veg.minerals,
+    tags: ["vegetable", veg.name.toLowerCase(), method.tag, "cooked variation"],
+    synonyms: [...(veg.synonyms ?? []), veg.name.toLowerCase()],
+    preparationMethod: method.tag,
+    fitnessBenefit: "Adds volume, fibre, and micronutrients with a clear cooked-preparation estimate.",
+    mealUse: "Log the cooked style closest to what you ate."
+  }))
+);
+
+const expandedNutritionFoods: FoodItem[] = [
+  ...vegetableVariationFoods,
+  food({ id: "cauliflower-rice", name: "Cauliflower rice", category: "vegetables", subcategory: "cauliflower", servingSize: 150, servingUnit: "g", calories: 38, protein: 3, carbs: 8, fibre: 3, vitamins: ["Vitamin C"], minerals: ["Potassium"], tags: ["cauliflower", "rice alternative", "low calorie"], synonyms: ["cauli rice"], preparationMethod: "grated cauliflower lightly steamed" }),
+  food({ id: "cauliflower-curry", name: "Cauliflower curry", category: "cultural-foods", subcategory: "cauliflower", servingSize: 1, servingUnit: "bowl", calories: 210, protein: 6, carbs: 24, fats: 10, sugar: 8, fibre: 7, sodium: 520, vitamins: ["Vitamin C"], minerals: ["Potassium"], tags: ["cauliflower", "curry", "vegetarian", "indian"], synonyms: ["gobi curry"], preparationMethod: "cauliflower cooked in curry sauce" }),
+  food({ id: "strawberries", name: "Strawberries", category: "fruits", subcategory: "berries", servingSize: 150, servingUnit: "g", calories: 48, protein: 1, carbs: 12, sugar: 7, fibre: 3, vitamins: ["Vitamin C"], tags: ["fruit", "berries"] }),
+  food({ id: "blueberries", name: "Blueberries", category: "fruits", subcategory: "berries", servingSize: 100, servingUnit: "g", calories: 57, protein: 1, carbs: 14, sugar: 10, fibre: 2, vitamins: ["Vitamin C"], tags: ["fruit", "berries"] }),
+  food({ id: "orange", name: "Orange", category: "fruits", subcategory: "citrus", servingSize: 1, servingUnit: "medium", calories: 62, protein: 1, carbs: 15, sugar: 12, fibre: 3, vitamins: ["Vitamin C"], minerals: ["Potassium"], tags: ["fruit", "citrus"] }),
+  food({ id: "grapes", name: "Grapes", category: "fruits", subcategory: "fruit", servingSize: 100, servingUnit: "g", calories: 69, protein: 1, carbs: 18, sugar: 15, fibre: 1, vitamins: ["Vitamin C"], tags: ["fruit", "snack"] }),
+  food({ id: "mango", name: "Mango", category: "fruits", subcategory: "tropical fruit", servingSize: 1, servingUnit: "cup", calories: 99, protein: 1, carbs: 25, sugar: 23, fibre: 3, vitamins: ["Vitamin A", "Vitamin C"], tags: ["fruit", "tropical"] }),
+  food({ id: "pineapple", name: "Pineapple", category: "fruits", subcategory: "tropical fruit", servingSize: 1, servingUnit: "cup", calories: 82, protein: 1, carbs: 22, sugar: 16, fibre: 2, vitamins: ["Vitamin C"], tags: ["fruit", "tropical"] }),
+  food({ id: "plain-yogurt", name: "Plain yogurt", category: "protein", subcategory: "dairy", servingSize: 200, servingUnit: "g", calories: 122, protein: 10, carbs: 14, fats: 4, sugar: 14, sodium: 120, vitamins: ["Vitamin B12"], minerals: ["Calcium"], tags: ["dairy", "yogurt", "protein"] }),
+  food({ id: "mozzarella", name: "Mozzarella", category: "protein", subcategory: "dairy", servingSize: 30, servingUnit: "g", calories: 85, protein: 6, carbs: 1, fats: 6, sodium: 180, minerals: ["Calcium"], tags: ["dairy", "cheese"] }),
+  food({ id: "paneer", name: "Paneer", category: "protein", subcategory: "dairy", servingSize: 100, servingUnit: "g", calories: 265, protein: 18, carbs: 3, fats: 20, sodium: 30, minerals: ["Calcium"], tags: ["dairy", "indian", "vegetarian protein"] }),
+  food({ id: "biryani", name: "Chicken biryani", category: "cultural-foods", subcategory: "rice dish", servingSize: 1, servingUnit: "plate", calories: 690, protein: 34, carbs: 82, fats: 24, fibre: 5, sodium: 980, tags: ["rice", "chicken", "indian", "restaurant"], preparationMethod: "rice with chicken and spices" }),
+  food({ id: "vegetable-biryani", name: "Vegetable biryani", category: "cultural-foods", subcategory: "rice dish", servingSize: 1, servingUnit: "plate", calories: 540, protein: 12, carbs: 84, fats: 17, fibre: 7, sodium: 820, tags: ["rice", "vegetarian", "indian", "restaurant"] }),
+  food({ id: "spaghetti-bolognese", name: "Spaghetti bolognese", category: "pasta", subcategory: "pasta meal", servingSize: 1, servingUnit: "bowl", calories: 620, protein: 32, carbs: 76, fats: 20, fibre: 6, sodium: 780, tags: ["pasta", "beef", "restaurant"] }),
+  food({ id: "mac-and-cheese", name: "Mac and cheese", category: "pasta", subcategory: "pasta meal", servingSize: 1, servingUnit: "bowl", calories: 510, protein: 19, carbs: 58, fats: 22, sodium: 760, minerals: ["Calcium"], tags: ["pasta", "cheese", "comfort food"] }),
+  food({ id: "ramen", name: "Ramen noodles", category: "noodles", subcategory: "noodle meal", servingSize: 1, servingUnit: "bowl", calories: 480, protein: 18, carbs: 62, fats: 18, sodium: 1550, tags: ["noodles", "restaurant", "soup"] }),
+  food({ id: "naan", name: "Naan bread", category: "bread", subcategory: "flatbread", servingSize: 1, servingUnit: "naan", calories: 260, protein: 8, carbs: 45, fats: 6, sugar: 4, fibre: 2, sodium: 420, tags: ["bread", "indian", "flatbread"] }),
+  food({ id: "tortilla-wrap", name: "Tortilla wrap", category: "bread", subcategory: "wrap", servingSize: 1, servingUnit: "wrap", calories: 190, protein: 5, carbs: 32, fats: 5, fibre: 3, sodium: 360, tags: ["bread", "wrap"] }),
+  food({ id: "crisps", name: "Crisps", category: "snacks", subcategory: "salty snack", servingSize: 30, servingUnit: "g bag", calories: 160, protein: 2, carbs: 15, fats: 10, sodium: 180, tags: ["snack", "chips"], synonyms: ["chips"] }),
+  food({ id: "hummus", name: "Hummus", category: "snacks", subcategory: "dip", servingSize: 50, servingUnit: "g", calories: 140, protein: 4, carbs: 8, fats: 10, fibre: 3, sodium: 220, minerals: ["Iron"], tags: ["snack", "dip", "vegetarian"] }),
+  food({ id: "ketchup", name: "Ketchup", category: "sauces", subcategory: "sauce", servingSize: 1, servingUnit: "tbsp", calories: 20, carbs: 5, sugar: 4, sodium: 160, tags: ["sauce", "tomato"] }),
+  food({ id: "mayonnaise", name: "Mayonnaise", category: "sauces", subcategory: "sauce", servingSize: 1, servingUnit: "tbsp", calories: 94, fats: 10, sodium: 90, tags: ["sauce", "mayo"] }),
+  food({ id: "bbq-sauce", name: "BBQ sauce", category: "sauces", subcategory: "sauce", servingSize: 1, servingUnit: "tbsp", calories: 30, carbs: 7, sugar: 6, sodium: 175, tags: ["sauce", "barbecue"] }),
+  food({ id: "cheesecake", name: "Cheesecake", category: "desserts", subcategory: "cake", servingSize: 1, servingUnit: "slice", calories: 360, protein: 7, carbs: 32, fats: 23, sugar: 24, sodium: 320, tags: ["dessert", "cake"] }),
+  food({ id: "ice-cream", name: "Ice cream", category: "desserts", subcategory: "frozen dessert", servingSize: 100, servingUnit: "g", calories: 207, protein: 4, carbs: 24, fats: 11, sugar: 21, minerals: ["Calcium"], tags: ["dessert"] }),
+  food({ id: "fish-and-chips", name: "Fish and chips", category: "restaurant-meals", subcategory: "takeaway", servingSize: 1, servingUnit: "meal", calories: 850, protein: 38, carbs: 92, fats: 38, fibre: 7, sodium: 1350, minerals: ["Omega-3"], tags: ["restaurant", "takeaway", "fish"] }),
+  food({ id: "chicken-burger", name: "Chicken burger", category: "restaurant-meals", subcategory: "burger", servingSize: 1, servingUnit: "burger", calories: 520, protein: 30, carbs: 48, fats: 22, sodium: 980, tags: ["restaurant", "chicken", "burger"] })
+];
+
+export const nutritionFoods: FoodItem[] = [...baseNutritionFoods, ...expandedNutritionFoods];
 
 export const mealTemplates: MealTemplate[] = [
   { id: "tpl-english-breakfast", name: "English breakfast", category: "restaurant meals", mealType: "breakfast", ingredientFoodIds: ["english-breakfast"], tags: ["eggs", "restaurant"], description: "A full breakfast plate estimate." },
