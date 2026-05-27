@@ -100,6 +100,7 @@ export type FoodLogStatus = "eaten" | "planned";
 export type VerifiedStatus = "verified" | "estimated" | "user";
 export type HydrationDrinkType = "water" | "sparkling water" | "tea" | "coffee" | "milk" | "electrolyte drink" | "protein shake";
 export type HydrationAdjustment = "workout-day" | "hot-weather" | "high-sweat";
+export type AccountMode = "guest" | "google";
 
 export type FoodItem = {
   id: string;
@@ -167,6 +168,27 @@ export type HydrationLogEntry = {
   amountMl: number;
 };
 
+export type FitGoalAccount = {
+  mode: AccountMode;
+  guestId?: string;
+  userId?: string;
+  email?: string;
+  name?: string;
+  startedAt: string;
+  lastSyncedAt?: string;
+};
+
+export type PerformanceSummary = {
+  totalFoodLogs: number;
+  totalHydrationLogs: number;
+  workoutsCompleted: number;
+  currentWeightKg: number;
+  latestWaistCm: number;
+  averageCaloriesLogged: number;
+  averageProteinLogged: number;
+  lastActiveDate: string;
+};
+
 export type MicronutrientItem = {
   name: string;
   foods: string[];
@@ -183,6 +205,7 @@ export type ProgressEntry = {
 };
 
 export type FitGoalState = {
+  account?: FitGoalAccount;
   profile: OnboardingProfile;
   completedWorkoutDates: string[];
   skippedDates: string[];

@@ -207,3 +207,12 @@ model HydrationAdjustment {
   @@id([userId, adjustmentDate, adjustment])
   @@map("hydration_adjustments")
 }
+
+model UserStateSnapshot {
+  userId             String   @id @map("user_id") @db.Uuid
+  state              Json
+  performanceSummary Json     @map("performance_summary")
+  updatedAt          DateTime @default(now()) @map("updated_at")
+
+  @@map("user_state_snapshots")
+}

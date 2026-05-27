@@ -1,9 +1,38 @@
 "use client";
 
-import { FitGoalState, FoodItem, FoodLogEntry, HydrationAdjustment, HydrationLogEntry, OnboardingProfile, ProgressEntry } from "@/lib/types";
+import { FitGoalAccount, FitGoalState, FoodItem, FoodLogEntry, HydrationAdjustment, HydrationLogEntry, OnboardingProfile, PerformanceSummary, ProgressEntry } from "@/lib/types";
 import { initialProgress, todayKey } from "@/lib/generators";
+import { supabase } from "@/lib/supabase";
 
 const key = "fitgoal-state";
+const accountKey = "fitgoal-account";
+
+function createGuestAccount(): FitGoalAccount {
+  return {
+    mode: "guest",
+    guestId: crypto.randomUUID(),
+    startedAt: new Date().toISOString()
+  };
+}
+
+export function loadAccount(): FitGoalAccount {
+  if (typeof window === "undefined") return createGuestAccount();
+  const raw = window.localStorage.getItem(accountKey);
+  if (!raw) {
+    const account = createGuestAccount();
+    window.localStorage.setItem(accountKey, JSON.stringify(account));
+    return account;
+  }
+  return JSON.parse(raw) as FitGoalAccount;
+}
+
+export function saveAccount(account: FitGoalAccount) {
+  if (typeof window === "undefined") return account;
+  window.localStorage.setItem(accountKey, JSON.stringify(account));
+  const saved = loadState();
+  if (saved) saveState({ ...saved, account });
+  return account;
+}
 
 export function loadState(): FitGoalState | null {
   if (typeof window === "undefined") return null;
@@ -12,6 +41,7 @@ export function loadState(): FitGoalState | null {
   const parsed = JSON.parse(raw) as FitGoalState;
   return {
     ...parsed,
+    account: parsed.account ?? loadAccount(),
     foodLogs: parsed.foodLogs ?? [],
     customFoods: parsed.customFoods ?? [],
     favoriteFoodIds: parsed.favoriteFoodIds ?? [],
@@ -21,11 +51,13 @@ export function loadState(): FitGoalState | null {
 }
 
 export function saveState(state: FitGoalState) {
-  window.localStorage.setItem(key, JSON.stringify(state));
+  const next = { ...state, account: state.account ?? loadAccount() };
+  window.localStorage.setItem(key, JSON.stringify(next));
+  void syncStateToSupabase(next);
 }
 
 export function createState(profile: OnboardingProfile): FitGoalState {
-  const state = { profile, completedWorkoutDates: [], skippedDates: [], progress: initialProgress(profile), foodLogs: [], customFoods: [], favoriteFoodIds: [], hydrationLogs: [], hydrationAdjustments: {} };
+  const state = { account: loadAccount(), profile, completedWorkoutDates: [], skippedDates: [], progress: initialProgress(profile), foodLogs: [], customFoods: [], favoriteFoodIds: [], hydrationLogs: [], hydrationAdjustments: {} };
   saveState(state);
   return state;
 }
@@ -114,4 +146,36 @@ export function toggleHydrationAdjustment(state: FitGoalState, date: string, adj
   };
   saveState(next);
   return next;
+}
+
+export function performanceSummary(state: FitGoalState): PerformanceSummary {
+  const foodLogs = state.foodLogs ?? [];
+  const eatenLogs = foodLogs.filter((entry) => entry.status === "eaten");
+  const uniqueFoodDays = Array.from(new Set(eatenLogs.map((entry) => entry.date)));
+  const latestProgress = state.progress[0];
+  const calories = eatenLogs.reduce((sum, entry) => sum + entry.calories, 0);
+  const protein = eatenLogs.reduce((sum, entry) => sum + entry.protein, 0);
+
+  return {
+    totalFoodLogs: foodLogs.length,
+    totalHydrationLogs: (state.hydrationLogs ?? []).length,
+    workoutsCompleted: state.completedWorkoutDates.length,
+    currentWeightKg: latestProgress?.weightKg ?? state.profile.weightKg,
+    latestWaistCm: latestProgress?.waistCm ?? Math.round(state.profile.heightCm * 0.48),
+    averageCaloriesLogged: uniqueFoodDays.length ? Math.round(calories / uniqueFoodDays.length) : 0,
+    averageProteinLogged: uniqueFoodDays.length ? Math.round(protein / uniqueFoodDays.length) : 0,
+    lastActiveDate: todayKey()
+  };
+}
+
+async function syncStateToSupabase(state: FitGoalState) {
+  if (!supabase || state.account?.mode !== "google") return;
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) return;
+  await supabase.from("user_state_snapshots").upsert({
+    user_id: data.user.id,
+    state,
+    performance_summary: performanceSummary(state),
+    updated_at: new Date().toISOString()
+  });
 }

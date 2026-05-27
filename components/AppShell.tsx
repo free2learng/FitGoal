@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Activity, Dumbbell, Flame, Home, LineChart, Utensils } from "lucide-react";
+import { Activity, Dumbbell, Flame, Home, LineChart, UserRound, Utensils } from "lucide-react";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -11,6 +11,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Activity size={20} />
             </span>
             <span className="text-xl font-black tracking-normal">FitGoal</span>
+          </Link>
+          <Link href="/account" className="grid h-9 w-9 place-items-center rounded-lg bg-zinc-100 text-ink" aria-label="Account">
+            <UserRound size={18} />
           </Link>
         </header>
         <div className="flex-1">{children}</div>

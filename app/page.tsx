@@ -20,8 +20,8 @@ export default function HomePage() {
             <div className="rounded-lg bg-peach/20 p-3">Meals</div>
             <div className="rounded-lg bg-mint/15 p-3">Progress</div>
           </div>
-          <Link href="/onboarding" className="flex h-14 items-center justify-center gap-2 rounded-lg bg-ink px-5 text-base font-black text-white">
-            Start quiz <ArrowRight size={20} />
+          <Link href="/account" className="flex h-14 items-center justify-center gap-2 rounded-lg bg-ink px-5 text-base font-black text-white">
+            Start FitGoal <ArrowRight size={20} />
           </Link>
         </div>
       </section>

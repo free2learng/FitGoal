@@ -23,6 +23,8 @@ FitGoal is a mobile-first MVP fitness app built with Next.js, TypeScript, Tailwi
 - Dashboard calorie balance based only on user-logged foods
 - Protein tracking with body-weight based goals, per-meal protein guidance, and meal-level protein status
 - Hydration logging with quick-add water amounts, hydration drink types, daily goal adjustments, and remaining water tracking
+- Account screen at `/account` with Google sign-in through Supabase or guest mode
+- Supabase-ready state snapshots for performance analysis of food logs, hydration, workouts, weight, and waist progress
 - Supabase SQL schema and optional Prisma schema
 
 ## Local setup
@@ -49,6 +51,9 @@ DATABASE_URL="..."
 ```
 
 4. Open the Supabase SQL editor and run `supabase/schema.sql`.
+5. In Supabase Auth providers, enable Google OAuth and add your Vercel/local callback URL.
+
+Google sign-in is optional. Guest mode stores FitGoal data in browser localStorage. When signed in with Google, FitGoal also saves a `user_state_snapshots` row with the current app state and a compact performance summary.
 
 ## Prisma option
 
