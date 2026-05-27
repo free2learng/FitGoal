@@ -211,6 +211,23 @@ create table if not exists public.food_logs (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.hydration_logs (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  log_date date not null,
+  drink_type text not null check (drink_type in ('water', 'sparkling water', 'tea', 'coffee', 'milk', 'electrolyte drink', 'protein shake')),
+  amount_ml integer not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.hydration_adjustments (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  adjustment_date date not null,
+  adjustment text not null check (adjustment in ('workout-day', 'hot-weather', 'high-sweat')),
+  created_at timestamptz not null default now(),
+  primary key (user_id, adjustment_date, adjustment)
+);
+
 alter table public.profiles enable row level security;
 alter table public.meal_days enable row level security;
 alter table public.meals enable row level security;
@@ -226,6 +243,8 @@ alter table public.favorite_foods enable row level security;
 alter table public.meal_templates enable row level security;
 alter table public.micronutrients enable row level security;
 alter table public.food_logs enable row level security;
+alter table public.hydration_logs enable row level security;
+alter table public.hydration_adjustments enable row level security;
 
 create policy "Users can manage own profile" on public.profiles for all using (auth.uid() = id) with check (auth.uid() = id);
 create policy "Users can manage own meal days" on public.meal_days for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -244,6 +263,8 @@ create policy "Users can manage own favorite foods" on public.favorite_foods for
 create policy "Anyone can read meal templates" on public.meal_templates for select using (true);
 create policy "Anyone can read micronutrients" on public.micronutrients for select using (true);
 create policy "Users can manage own food logs" on public.food_logs for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Users can manage own hydration logs" on public.hydration_logs for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Users can manage own hydration adjustments" on public.hydration_adjustments for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 insert into public.workout_programs (id, title, subtitle, goal, level, target_daily_deficit, weekly_fat_loss_estimate, safety_note)
 values ('stubborn-belly-fat-killer', 'Stubborn Belly Fat Killer', 'Beginner fat-loss conditioning with simple strength moves', 'belly-fat-reduction', 'beginner', 400, 'About 0.25-0.5 kg per week when paired with nutrition and recovery', 'Avoid extreme calorie deficits. Beginners usually do best with a 300-500 calorie daily deficit.')

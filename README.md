@@ -19,6 +19,8 @@ FitGoal is a mobile-first MVP fitness app built with Next.js, TypeScript, Tailwi
 - Expandable food database with everyday foods, drinks, cooked variations, meal templates, favourites, recents, and ingredient combinations
 - Food search supports exact/partial matches, synonyms, category/subcategory filters, and light typo tolerance
 - Dashboard calorie balance based only on user-logged foods
+- Protein tracking with body-weight based goals, per-meal protein guidance, and meal-level protein status
+- Hydration logging with quick-add water amounts, hydration drink types, daily goal adjustments, and remaining water tracking
 - Supabase SQL schema and optional Prisma schema
 
 ## Local setup

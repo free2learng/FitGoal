@@ -2,18 +2,29 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CalendarDays, Check, Droplets, Flame, RefreshCcw, ShieldAlert, Utensils } from "lucide-react";
+import { CalendarDays, Check, Droplets, Flame, Plus, RefreshCcw, ShieldAlert, Trash2, Utensils } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { MetricCard } from "@/components/MetricCard";
 import { calculateCaloriesBurned } from "@/lib/calories";
-import { calorieTarget, dietPlan, macroTargets, planLabel, progressPercent, proteinTarget, todayKey, todaysWorkout, waterTargetLiters } from "@/lib/generators";
-import { foodLogTotals, suggestNextMeal } from "@/lib/nutrition";
+import { calorieTarget, dietPlan, macroTargets, planLabel, progressPercent, proteinTarget, todayKey, todaysWorkout, waterTargetMl } from "@/lib/generators";
+import { calculateProteinPerMeal, foodLogTotals, mealProteinStatus, mealTotalsByType, suggestNextMeal } from "@/lib/nutrition";
 import { micronutrients, stubbornBellyFatKillerProgram } from "@/lib/program-data";
-import { completeToday, loadState, skipToday } from "@/lib/storage";
-import { FitGoalState } from "@/lib/types";
+import { addHydrationLog, completeToday, deleteHydrationLog, loadState, skipToday, toggleHydrationAdjustment } from "@/lib/storage";
+import { FitGoalState, HydrationDrinkType } from "@/lib/types";
+
+const mealTypes = ["breakfast", "lunch", "dinner", "snack", "post-workout"] as const;
+const hydrationQuickAdds: { label: string; amountMl: number; drinkType: HydrationDrinkType }[] = [
+  { label: "250ml glass", amountMl: 250, drinkType: "water" },
+  { label: "330ml bottle", amountMl: 330, drinkType: "water" },
+  { label: "500ml bottle", amountMl: 500, drinkType: "water" },
+  { label: "750ml bottle", amountMl: 750, drinkType: "water" },
+  { label: "1 litre bottle", amountMl: 1000, drinkType: "water" }
+];
+const hydrationDrinkTypes: HydrationDrinkType[] = ["water", "sparkling water", "tea", "coffee", "milk", "electrolyte drink", "protein shake"];
 
 export default function DashboardPage() {
   const [state, setState] = useState<FitGoalState | null>(null);
+  const [customWaterMl, setCustomWaterMl] = useState(250);
+  const [customDrinkType, setCustomDrinkType] = useState<HydrationDrinkType>("water");
 
   useEffect(() => {
     const saved = loadState();
@@ -27,13 +38,17 @@ export default function DashboardPage() {
   const meals = dietPlan(state.profile);
   const calories = calorieTarget(state.profile);
   const protein = proteinTarget(state.profile);
-  const water = waterTargetLiters(state.profile);
   const progress = progressPercent(state);
   const macros = macroTargets(state.profile);
   const today = todayKey();
   const todaysFoodLogs = (state.foodLogs ?? []).filter((entry) => entry.date === today);
   const eatenTotals = foodLogTotals(todaysFoodLogs.filter((entry) => entry.status === "eaten"));
   const plannedTotals = foodLogTotals(todaysFoodLogs.filter((entry) => entry.status === "planned"));
+  const todaysHydrationLogs = (state.hydrationLogs ?? []).filter((entry) => entry.date === today);
+  const hydrationAdjustments = state.hydrationAdjustments?.[today] ?? [];
+  const waterGoal = waterTargetMl(state.profile, hydrationAdjustments);
+  const waterLogged = todaysHydrationLogs.reduce((sum, entry) => sum + entry.amountMl, 0);
+  const waterRemaining = Math.max(0, waterGoal - waterLogged);
   const plannedWorkoutCalories = stubbornBellyFatKillerProgram.exercises.reduce((sum, exercise) => {
     const perSet = calculateCaloriesBurned({
       userWeightKg: state.profile.weightKg,
@@ -48,7 +63,15 @@ export default function DashboardPage() {
   const projectedNetCalories = eatenTotals.calories + plannedTotals.calories - completedWorkoutCalories - expectedWorkoutCalories;
   const remainingCalories = Math.max(0, macros.calories - projectedNetCalories);
   const proteinStillNeeded = Math.max(0, macros.protein - eatenTotals.protein - plannedTotals.protein);
+  const proteinEatenRemaining = Math.max(0, macros.protein - eatenTotals.protein);
+  const proteinPerMeal = calculateProteinPerMeal({ dailyProteinGoal: macros.protein, mealsPerDay: 4 });
+  const mealRows = mealTotalsByType(todaysFoodLogs.filter((entry) => entry.status === "eaten"), [...mealTypes]);
   const suggestedMeal = suggestNextMeal(remainingCalories, proteinStillNeeded);
+
+  function logHydration(amountMl: number, drinkType: HydrationDrinkType) {
+    if (!state) return;
+    setState(addHydrationLog(state, { date: today, amountMl, drinkType }));
+  }
 
   return (
     <AppShell>
@@ -63,10 +86,12 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <MetricCard label="Calories" value={`${calories}`} hint="daily target" />
-          <MetricCard label="Protein" value={`${protein}g`} hint="daily target" />
-          <MetricCard label="Water" value={`${water}L`} hint="goal today" />
-          <MetricCard label="Streak" value={`${state.completedWorkoutDates.length}`} hint="workouts done" />
+          <BalanceTile label="Calories Today" value={eatenTotals.calories} suffix={`of ${calories} cal`} />
+          <BalanceTile label="Protein Today" value={eatenTotals.protein} suffix={`of ${protein}g`} />
+          <BalanceTile label="Protein Per Meal" value={proteinPerMeal} suffix="g target" />
+          <BalanceTile label="Hydration Today" value={waterLogged} suffix={`of ${waterGoal} ml`} />
+          <BalanceTile label="Workout Calories Burned" value={completedWorkoutCalories} suffix="cal" />
+          <BalanceTile label="Net Calorie Balance" value={actualNetCalories} suffix="cal" />
         </div>
 
         <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
@@ -93,6 +118,27 @@ export default function DashboardPage() {
             <MacroBar label="Carbs eaten" eaten={eatenTotals.carbs} target={macros.carbs} suffix="g" />
             <MacroBar label="Fats eaten" eaten={eatenTotals.fats} target={macros.fats} suffix="g" />
           </div>
+          <div className="mt-4 rounded-lg bg-mint/15 p-3">
+            <p className="text-sm font-black text-ink">Protein guidance</p>
+            <p className="mt-1 text-sm text-zinc-700">You should aim for around {proteinPerMeal}g protein per meal today. Protein remaining from eaten foods: {proteinEatenRemaining}g.</p>
+            <p className="mt-1 text-xs font-semibold text-zinc-600">Guideline: fat loss and muscle gain use 1.6-2.2g/kg body weight; maintenance uses 1.2-1.6g/kg.</p>
+          </div>
+          <div className="mt-4 rounded-lg bg-zinc-50 p-3">
+            <p className="text-sm font-black text-ink">Meal-level protein</p>
+            <div className="mt-3 space-y-2">
+              {mealRows.map((row) => (
+                <div key={row.mealType} className="rounded-lg bg-white p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-black capitalize text-ink">{row.mealType.replace("-", " ")}</p>
+                    <span className={`rounded-lg px-2 py-1 text-xs font-black ${row.count && row.totals.protein >= proteinPerMeal * 0.8 ? "bg-mint/20 text-leaf" : "bg-peach/30 text-ink"}`}>
+                      {row.count ? mealProteinStatus(row.totals.protein, proteinPerMeal) : "No meal logged"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-zinc-600">{row.totals.calories} cal - {row.totals.protein}g protein - {row.totals.carbs}g carbs - {row.totals.fats}g fats</p>
+                </div>
+              ))}
+            </div>
+          </div>
           <div className="mt-4 rounded-lg bg-zinc-50 p-3">
             <p className="text-sm font-black text-ink">Vitamins and minerals checklist</p>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -109,6 +155,49 @@ export default function DashboardPage() {
           <div className="mt-4 rounded-lg bg-sky/15 p-3">
             <p className="text-sm font-black text-ink">Suggested next meal</p>
             <p className="mt-1 text-sm text-zinc-700">{suggestedMeal.name} ({suggestedMeal.calories} cal, {suggestedMeal.protein}g protein)</p>
+          </div>
+        </article>
+
+        <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-bold text-leaf"><Droplets size={17} /> Hydration Today</p>
+              <h2 className="mt-2 text-2xl font-black text-ink">{waterLogged}ml logged</h2>
+            </div>
+            <p className="rounded-lg bg-sky/15 px-3 py-2 text-sm font-black text-ink">{waterRemaining}ml left</p>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-zinc-600">You have {waterRemaining}ml left to reach your hydration goal. Alcohol is not counted as hydration.</p>
+          <div className="mt-4">
+            <MacroBar label="Water progress" eaten={waterLogged} target={waterGoal} suffix="ml" />
+          </div>
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+            {hydrationQuickAdds.map((option) => (
+              <button key={option.label} onClick={() => logHydration(option.amountMl, option.drinkType)} className="shrink-0 rounded-lg bg-ink px-3 py-2 text-xs font-black text-white">
+                <Plus size={14} className="inline" /> {option.label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 grid grid-cols-[1fr_120px] gap-2">
+            <select value={customDrinkType} onChange={(event) => setCustomDrinkType(event.target.value as HydrationDrinkType)} className="h-11 rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-leaf">
+              {hydrationDrinkTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+            </select>
+            <input value={customWaterMl} onChange={(event) => setCustomWaterMl(Number(event.target.value))} type="number" min="1" step="50" className="h-11 rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-leaf" aria-label="Custom hydration amount ml" />
+          </div>
+          <button onClick={() => logHydration(Math.max(1, customWaterMl), customDrinkType)} className="mt-2 h-11 w-full rounded-lg bg-leaf text-sm font-black text-white">Add custom amount</button>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <AdjustmentButton active={hydrationAdjustments.includes("workout-day")} label="Workout +500ml" onClick={() => setState(toggleHydrationAdjustment(state, today, "workout-day"))} />
+            <AdjustmentButton active={hydrationAdjustments.includes("hot-weather")} label="Hot +500ml" onClick={() => setState(toggleHydrationAdjustment(state, today, "hot-weather"))} />
+            <AdjustmentButton active={hydrationAdjustments.includes("high-sweat")} label="High sweat +750ml" onClick={() => setState(toggleHydrationAdjustment(state, today, "high-sweat"))} />
+          </div>
+          <div className="mt-3 space-y-2">
+            {todaysHydrationLogs.length === 0 ? (
+              <p className="rounded-lg bg-zinc-50 p-3 text-sm font-semibold text-zinc-500">No hydration logged yet.</p>
+            ) : todaysHydrationLogs.slice(0, 5).map((log) => (
+              <div key={log.id} className="flex items-center justify-between rounded-lg bg-zinc-50 p-3">
+                <p className="text-sm font-bold text-ink">{log.amountMl}ml {log.drinkType}</p>
+                <button onClick={() => setState(deleteHydrationLog(state, log.id))} className="grid h-8 w-8 place-items-center rounded-lg bg-white text-zinc-500" aria-label="Delete hydration"><Trash2 size={15} /></button>
+              </div>
+            ))}
           </div>
         </article>
 
@@ -175,6 +264,14 @@ function BalanceTile({ label, value, suffix }: { label: string; value: number; s
       <p className="mt-1 text-xl font-black text-ink">{value}</p>
       <p className="text-xs font-semibold text-zinc-500">{suffix}</p>
     </div>
+  );
+}
+
+function AdjustmentButton({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className={`min-h-11 rounded-lg px-2 text-xs font-black ${active ? "bg-sky text-ink" : "bg-zinc-100 text-zinc-600"}`}>
+      {label}
+    </button>
   );
 }
 

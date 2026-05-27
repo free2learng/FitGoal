@@ -1,5 +1,5 @@
 import { mealPlanFor, workoutFor, workouts } from "@/lib/seed-data";
-import { FitGoalState, Goal, OnboardingProfile, ProgressEntry } from "@/lib/types";
+import { FitGoalState, Goal, HydrationAdjustment, OnboardingProfile, ProgressEntry } from "@/lib/types";
 
 export function calorieTarget(profile: OnboardingProfile) {
   const base = 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + 5;
@@ -10,12 +10,22 @@ export function calorieTarget(profile: OnboardingProfile) {
 }
 
 export function proteinTarget(profile: OnboardingProfile) {
-  const multiplier = profile.goal === "muscle-gain" ? 2.0 : profile.goal === "fat-loss" || profile.goal === "belly-fat-reduction" ? 1.8 : 1.6;
+  const multiplier = profile.goal === "maintenance" ? 1.4 : 1.8;
   return Math.round(profile.weightKg * multiplier);
 }
 
 export function waterTargetLiters(profile: OnboardingProfile) {
   return Number(Math.max(2.1, profile.weightKg * 0.035).toFixed(1));
+}
+
+export function waterTargetMl(profile: OnboardingProfile, adjustments: HydrationAdjustment[] = []) {
+  const adjustmentMl = adjustments.reduce((sum, adjustment) => {
+    if (adjustment === "workout-day") return sum + 500;
+    if (adjustment === "hot-weather") return sum + 500;
+    if (adjustment === "high-sweat") return sum + 750;
+    return sum;
+  }, 0);
+  return Math.round(profile.weightKg * 35 + adjustmentMl);
 }
 
 export function planLabel(goal: Goal) {

@@ -186,3 +186,24 @@ model FoodLog {
 
   @@map("food_logs")
 }
+
+model HydrationLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  logDate   DateTime @map("log_date") @db.Date
+  drinkType String   @map("drink_type")
+  amountMl  Int      @map("amount_ml")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("hydration_logs")
+}
+
+model HydrationAdjustment {
+  userId         String   @map("user_id") @db.Uuid
+  adjustmentDate DateTime @map("adjustment_date") @db.Date
+  adjustment     String
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@id([userId, adjustmentDate, adjustment])
+  @@map("hydration_adjustments")
+}

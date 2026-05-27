@@ -1,6 +1,6 @@
 "use client";
 
-import { FitGoalState, FoodItem, FoodLogEntry, OnboardingProfile, ProgressEntry } from "@/lib/types";
+import { FitGoalState, FoodItem, FoodLogEntry, HydrationAdjustment, HydrationLogEntry, OnboardingProfile, ProgressEntry } from "@/lib/types";
 import { initialProgress, todayKey } from "@/lib/generators";
 
 const key = "fitgoal-state";
@@ -14,7 +14,9 @@ export function loadState(): FitGoalState | null {
     ...parsed,
     foodLogs: parsed.foodLogs ?? [],
     customFoods: parsed.customFoods ?? [],
-    favoriteFoodIds: parsed.favoriteFoodIds ?? []
+    favoriteFoodIds: parsed.favoriteFoodIds ?? [],
+    hydrationLogs: parsed.hydrationLogs ?? [],
+    hydrationAdjustments: parsed.hydrationAdjustments ?? {}
   };
 }
 
@@ -23,7 +25,7 @@ export function saveState(state: FitGoalState) {
 }
 
 export function createState(profile: OnboardingProfile): FitGoalState {
-  const state = { profile, completedWorkoutDates: [], skippedDates: [], progress: initialProgress(profile), foodLogs: [], customFoods: [], favoriteFoodIds: [] };
+  const state = { profile, completedWorkoutDates: [], skippedDates: [], progress: initialProgress(profile), foodLogs: [], customFoods: [], favoriteFoodIds: [], hydrationLogs: [], hydrationAdjustments: {} };
   saveState(state);
   return state;
 }
@@ -83,6 +85,33 @@ export function toggleFavoriteFood(state: FitGoalState, foodId: string) {
   if (existing.has(foodId)) existing.delete(foodId);
   else existing.add(foodId);
   const next = { ...state, favoriteFoodIds: Array.from(existing) };
+  saveState(next);
+  return next;
+}
+
+export function addHydrationLog(state: FitGoalState, entry: Omit<HydrationLogEntry, "id">) {
+  const next = { ...state, hydrationLogs: [{ ...entry, id: crypto.randomUUID() }, ...(state.hydrationLogs ?? [])] };
+  saveState(next);
+  return next;
+}
+
+export function deleteHydrationLog(state: FitGoalState, entryId: string) {
+  const next = { ...state, hydrationLogs: (state.hydrationLogs ?? []).filter((entry) => entry.id !== entryId) };
+  saveState(next);
+  return next;
+}
+
+export function toggleHydrationAdjustment(state: FitGoalState, date: string, adjustment: HydrationAdjustment) {
+  const existing = new Set(state.hydrationAdjustments?.[date] ?? []);
+  if (existing.has(adjustment)) existing.delete(adjustment);
+  else existing.add(adjustment);
+  const next = {
+    ...state,
+    hydrationAdjustments: {
+      ...(state.hydrationAdjustments ?? {}),
+      [date]: Array.from(existing)
+    }
+  };
   saveState(next);
   return next;
 }

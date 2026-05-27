@@ -98,6 +98,8 @@ export type FoodCategory =
 export type MealType = "breakfast" | "lunch" | "dinner" | "snack" | "drink" | "post-workout";
 export type FoodLogStatus = "eaten" | "planned";
 export type VerifiedStatus = "verified" | "estimated" | "user";
+export type HydrationDrinkType = "water" | "sparkling water" | "tea" | "coffee" | "milk" | "electrolyte drink" | "protein shake";
+export type HydrationAdjustment = "workout-day" | "hot-weather" | "high-sweat";
 
 export type FoodItem = {
   id: string;
@@ -158,6 +160,13 @@ export type FoodLogEntry = {
   source: "library" | "custom" | "template" | "combination";
 };
 
+export type HydrationLogEntry = {
+  id: string;
+  date: string;
+  drinkType: HydrationDrinkType;
+  amountMl: number;
+};
+
 export type MicronutrientItem = {
   name: string;
   foods: string[];
@@ -181,4 +190,6 @@ export type FitGoalState = {
   foodLogs?: FoodLogEntry[];
   customFoods?: FoodItem[];
   favoriteFoodIds?: string[];
+  hydrationLogs?: HydrationLogEntry[];
+  hydrationAdjustments?: Record<string, HydrationAdjustment[]>;
 };

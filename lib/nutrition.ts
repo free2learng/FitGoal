@@ -1,4 +1,4 @@
-import { FoodItem, FoodLogEntry } from "@/lib/types";
+import { FoodItem, FoodLogEntry, MealType } from "@/lib/types";
 
 export function foodLogTotals(logs: FoodLogEntry[]) {
   return logs.reduce(
@@ -96,4 +96,21 @@ export function suggestNextMeal(remainingCalories: number, proteinStillNeeded: n
   ];
 
   return suggestions.find((meal) => meal.calories <= remainingCalories && meal.protein >= Math.min(20, proteinStillNeeded)) ?? suggestions[0];
+}
+
+export function calculateProteinPerMeal({ dailyProteinGoal, mealsPerDay }: { dailyProteinGoal: number; mealsPerDay: number }) {
+  return Math.round(dailyProteinGoal / Math.max(1, mealsPerDay));
+}
+
+export function mealProteinStatus(protein: number, target: number) {
+  if (protein >= target * 1.35) return "High protein meal";
+  if (protein >= target * 0.8) return "Good protein meal";
+  return "Low protein meal";
+}
+
+export function mealTotalsByType(logs: FoodLogEntry[], mealTypes: MealType[]) {
+  return mealTypes.map((mealType) => {
+    const mealLogs = logs.filter((log) => log.mealType === mealType);
+    return { mealType, totals: foodLogTotals(mealLogs), count: mealLogs.length };
+  });
 }
