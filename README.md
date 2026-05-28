@@ -41,25 +41,63 @@ Open `http://localhost:3000`.
 
 The user fitness MVP still works with browser localStorage for guest mode. Supabase credentials are required for Google login and the protected admin dashboard.
 
-## Supabase setup
+## Supabase Google Login Setup
 
-1. Create a Supabase project.
-2. Copy `.env.example` to `.env.local`.
-3. Fill in:
+1. Create a Supabase project at `https://supabase.com`.
+2. In Supabase, open Project Settings -> API.
+3. Copy your `Project URL` into `NEXT_PUBLIC_SUPABASE_URL`.
+4. Copy your publishable anon key into `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+5. Copy `.env.example` to `.env.local`.
+6. Add the values:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL="..."
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="..."
-SUPABASE_SERVICE_ROLE_KEY="..."
-DATABASE_URL="..."
+NEXT_PUBLIC_SUPABASE_URL="https://YOUR_PROJECT_REF.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="your-publishable-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
 ```
 
-4. Open the Supabase SQL editor and run `supabase/schema.sql`.
-5. In Supabase Auth providers, enable Google OAuth.
-6. Add your Google Client ID and Google Client Secret in Supabase Auth provider settings.
-7. Add redirect URLs in Supabase and Google Cloud Console:
-   - Local: `http://localhost:3000/auth/callback`
-   - Production: `https://fitgoal-ten.vercel.app/auth/callback`
+7. Open Supabase SQL Editor and run `supabase/schema.sql`.
+8. In Supabase, open Authentication -> Providers -> Google and enable Google.
+9. In Google Cloud Console, create an OAuth client:
+   - Application type: Web application
+   - Name: FitGoal local/dev or FitGoal production
+10. In Google Cloud Console, add this Supabase callback URL to Authorized redirect URIs:
+
+```text
+https://YOUR_PROJECT_REF.supabase.co/auth/v1/callback
+```
+
+11. Copy the Google Client ID and Client Secret.
+12. Paste the Google Client ID and Client Secret into Supabase Authentication -> Providers -> Google.
+13. In Supabase Authentication -> URL Configuration, add the local app redirect URL:
+
+```text
+http://localhost:3000/auth/callback
+```
+
+14. For production, also add your deployed callback URL:
+
+```text
+https://YOUR_DOMAIN.com/auth/callback
+```
+
+For the current Vercel app, that is:
+
+```text
+https://fitgoal-ten.vercel.app/auth/callback
+```
+
+15. Restart the local Next.js dev server after editing `.env.local`.
+
+To test Google signup/login locally:
+
+1. Run `npm run dev`.
+2. Open `http://localhost:3000/login`.
+3. Click `Continue with Google`.
+4. Complete Google consent.
+5. Supabase redirects back through `/auth/callback`.
+6. You should land on `/dashboard`.
+7. In Supabase Table Editor, check that a row was created in `public.profiles`.
 
 `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are safe for browser use. `SUPABASE_SERVICE_ROLE_KEY` must only be used server-side; FitGoal uses it only in server actions for admin-safe database management.
 
