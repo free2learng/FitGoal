@@ -2,16 +2,45 @@ create extension if not exists "uuid-ossp";
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  goal text not null check (goal in ('fat-loss', 'belly-fat-reduction', 'muscle-gain', 'maintenance')),
-  age integer not null,
-  height_cm integer not null,
-  weight_kg numeric not null,
-  fitness_level text not null check (fitness_level in ('beginner', 'intermediate', 'athletic')),
-  equipment text not null check (equipment in ('none', 'dumbbells', 'gym')),
-  diet_preference text not null check (diet_preference in ('balanced', 'high-protein', 'vegetarian')),
+  email text,
+  full_name text,
+  avatar_url text,
+  role text not null default 'user' check (role in ('user', 'admin')),
+  goal text check (goal in ('fat-loss', 'belly-fat-reduction', 'muscle-gain', 'maintenance')),
+  age integer,
+  height_cm integer,
+  weight_kg numeric,
+  fitness_level text check (fitness_level in ('beginner', 'intermediate', 'athletic')),
+  equipment text check (equipment in ('none', 'dumbbells', 'gym')),
+  diet_preference text check (diet_preference in ('balanced', 'high-protein', 'vegetarian')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.profiles add column if not exists email text;
+alter table public.profiles add column if not exists full_name text;
+alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists role text not null default 'user';
+alter table public.profiles alter column role set default 'user';
+update public.profiles set role = 'user' where role is null;
+alter table public.profiles alter column role set not null;
+alter table public.profiles alter column goal drop not null;
+alter table public.profiles alter column age drop not null;
+alter table public.profiles alter column height_cm drop not null;
+alter table public.profiles alter column weight_kg drop not null;
+alter table public.profiles alter column fitness_level drop not null;
+alter table public.profiles alter column equipment drop not null;
+alter table public.profiles alter column diet_preference drop not null;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'profiles_role_check' and conrelid = 'public.profiles'::regclass
+  ) then
+    alter table public.profiles add constraint profiles_role_check check (role in ('user', 'admin'));
+  end if;
+end $$;
 
 create table if not exists public.workouts (
   id text primary key,
@@ -235,6 +264,63 @@ create table if not exists public.user_state_snapshots (
   updated_at timestamptz not null default now()
 );
 
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists set_profiles_updated_at on public.profiles;
+create trigger set_profiles_updated_at
+before update on public.profiles
+for each row execute function public.set_updated_at();
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, email, full_name, avatar_url, role)
+  values (
+    new.id,
+    new.email,
+    coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name'),
+    new.raw_user_meta_data->>'avatar_url',
+    'user'
+  )
+  on conflict (id) do update set
+    email = excluded.email,
+    full_name = coalesce(public.profiles.full_name, excluded.full_name),
+    avatar_url = coalesce(public.profiles.avatar_url, excluded.avatar_url),
+    updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute function public.handle_new_user();
+
+create or replace function public.is_admin(user_id uuid default auth.uid())
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = user_id and role = 'admin'
+  );
+$$;
+
 alter table public.profiles enable row level security;
 alter table public.meal_days enable row level security;
 alter table public.meals enable row level security;
@@ -254,7 +340,44 @@ alter table public.hydration_logs enable row level security;
 alter table public.hydration_adjustments enable row level security;
 alter table public.user_state_snapshots enable row level security;
 
-create policy "Users can manage own profile" on public.profiles for all using (auth.uid() = id) with check (auth.uid() = id);
+drop policy if exists "Users can manage own profile" on public.profiles;
+drop policy if exists "Users can read own profile" on public.profiles;
+drop policy if exists "Users can update own profile" on public.profiles;
+drop policy if exists "Admins can read profiles" on public.profiles;
+drop policy if exists "Admins can manage profiles" on public.profiles;
+create policy "Users can read own profile" on public.profiles for select using (auth.uid() = id);
+create policy "Users can update own profile" on public.profiles for update using (auth.uid() = id) with check (auth.uid() = id and role = 'user');
+create policy "Admins can read profiles" on public.profiles for select using (
+  public.is_admin()
+);
+create policy "Admins can manage profiles" on public.profiles for all using (
+  public.is_admin()
+) with check (
+  public.is_admin()
+);
+drop policy if exists "Users can manage own meal days" on public.meal_days;
+drop policy if exists "Users can read own meals" on public.meals;
+drop policy if exists "Users can manage own logs" on public.workout_logs;
+drop policy if exists "Users can manage own progress" on public.progress_entries;
+drop policy if exists "Anyone can read seed workouts" on public.workouts;
+drop policy if exists "Anyone can read seed exercises" on public.exercises;
+drop policy if exists "Anyone can read workout programs" on public.workout_programs;
+drop policy if exists "Anyone can read exercise library" on public.exercise_library;
+drop policy if exists "Anyone can read nutrition foods" on public.nutrition_foods;
+drop policy if exists "Admins can manage workouts" on public.workouts;
+drop policy if exists "Admins can manage exercises" on public.exercises;
+drop policy if exists "Admins can manage workout programs" on public.workout_programs;
+drop policy if exists "Admins can manage exercise library" on public.exercise_library;
+drop policy if exists "Admins can manage nutrition foods" on public.nutrition_foods;
+drop policy if exists "Users can manage own custom foods" on public.user_custom_foods;
+drop policy if exists "Users can manage own favorite foods" on public.favorite_foods;
+drop policy if exists "Anyone can read meal templates" on public.meal_templates;
+drop policy if exists "Anyone can read micronutrients" on public.micronutrients;
+drop policy if exists "Users can manage own food logs" on public.food_logs;
+drop policy if exists "Users can manage own hydration logs" on public.hydration_logs;
+drop policy if exists "Users can manage own hydration adjustments" on public.hydration_adjustments;
+drop policy if exists "Users can manage own state snapshots" on public.user_state_snapshots;
+
 create policy "Users can manage own meal days" on public.meal_days for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Users can read own meals" on public.meals for select using (
   exists (select 1 from public.meal_days where public.meal_days.id = meal_day_id and public.meal_days.user_id = auth.uid())
@@ -266,6 +389,11 @@ create policy "Anyone can read seed exercises" on public.exercises for select us
 create policy "Anyone can read workout programs" on public.workout_programs for select using (true);
 create policy "Anyone can read exercise library" on public.exercise_library for select using (true);
 create policy "Anyone can read nutrition foods" on public.nutrition_foods for select using (true);
+create policy "Admins can manage workouts" on public.workouts for all using (public.is_admin()) with check (public.is_admin());
+create policy "Admins can manage exercises" on public.exercises for all using (public.is_admin()) with check (public.is_admin());
+create policy "Admins can manage workout programs" on public.workout_programs for all using (public.is_admin()) with check (public.is_admin());
+create policy "Admins can manage exercise library" on public.exercise_library for all using (public.is_admin()) with check (public.is_admin());
+create policy "Admins can manage nutrition foods" on public.nutrition_foods for all using (public.is_admin()) with check (public.is_admin());
 create policy "Users can manage own custom foods" on public.user_custom_foods for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Users can manage own favorite foods" on public.favorite_foods for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Anyone can read meal templates" on public.meal_templates for select using (true);

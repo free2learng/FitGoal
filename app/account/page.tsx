@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ArrowRight, CheckCircle2, Cloud, LogOut, UserRound } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { loadAccount, loadState, performanceSummary, saveAccount, saveState } from "@/lib/storage";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/client";
 import { FitGoalAccount, FitGoalState } from "@/lib/types";
 
 export default function AccountPage() {
@@ -49,7 +49,7 @@ export default function AccountPage() {
     }
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/account` }
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/account` }
     });
   }
 

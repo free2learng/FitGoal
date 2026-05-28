@@ -9,13 +9,17 @@ datasource db {
 
 model Profile {
   id             String   @id @db.Uuid
-  goal           String
-  age            Int
-  heightCm       Int      @map("height_cm")
-  weightKg       Decimal  @map("weight_kg")
-  fitnessLevel   String   @map("fitness_level")
-  equipment      String
-  dietPreference String   @map("diet_preference")
+  email          String?
+  fullName       String?  @map("full_name")
+  avatarUrl      String?  @map("avatar_url")
+  role           String   @default("user")
+  goal           String?
+  age            Int?
+  heightCm       Int?     @map("height_cm")
+  weightKg       Decimal? @map("weight_kg")
+  fitnessLevel   String?  @map("fitness_level")
+  equipment      String?
+  dietPreference String?  @map("diet_preference")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @default(now()) @map("updated_at")
 

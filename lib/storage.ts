@@ -2,7 +2,7 @@
 
 import { FitGoalAccount, FitGoalState, FoodItem, FoodLogEntry, HydrationAdjustment, HydrationLogEntry, OnboardingProfile, PerformanceSummary, ProgressEntry } from "@/lib/types";
 import { initialProgress, todayKey } from "@/lib/generators";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase/client";
 
 const key = "fitgoal-state";
 const accountKey = "fitgoal-account";

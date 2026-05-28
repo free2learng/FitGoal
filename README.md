@@ -25,6 +25,8 @@ FitGoal is a mobile-first MVP fitness app built with Next.js, TypeScript, Tailwi
 - Protein tracking with body-weight based goals, per-meal protein guidance, and meal-level protein status
 - Hydration logging with quick-add water amounts, hydration drink types, daily goal adjustments, and remaining water tracking
 - Account screen at `/account` with Google sign-in through Supabase or guest mode
+- Login screen at `/login` using Supabase Google OAuth with SSR cookie auth
+- Protected admin dashboard at `/admin` for users whose `profiles.role` is `admin`
 - Supabase-ready state snapshots for performance analysis of food logs, hydration, workouts, weight, and waist progress
 - Supabase SQL schema and optional Prisma schema
 
@@ -37,7 +39,7 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-The MVP works immediately with browser localStorage. Supabase credentials are optional until you wire persistence and auth into the UI.
+The user fitness MVP still works with browser localStorage for guest mode. Supabase credentials are required for Google login and the protected admin dashboard.
 
 ## Supabase setup
 
@@ -47,14 +49,36 @@ The MVP works immediately with browser localStorage. Supabase credentials are op
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL="..."
-NEXT_PUBLIC_SUPABASE_ANON_KEY="..."
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="..."
+SUPABASE_SERVICE_ROLE_KEY="..."
 DATABASE_URL="..."
 ```
 
 4. Open the Supabase SQL editor and run `supabase/schema.sql`.
-5. In Supabase Auth providers, enable Google OAuth and add your Vercel/local callback URL.
+5. In Supabase Auth providers, enable Google OAuth.
+6. Add your Google Client ID and Google Client Secret in Supabase Auth provider settings.
+7. Add redirect URLs in Supabase and Google Cloud Console:
+   - Local: `http://localhost:3000/auth/callback`
+   - Production: `https://fitgoal-ten.vercel.app/auth/callback`
 
-Google sign-in is optional. Guest mode stores FitGoal data in browser localStorage. When signed in with Google, FitGoal also saves a `user_state_snapshots` row with the current app state and a compact performance summary.
+`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are safe for browser use. `SUPABASE_SERVICE_ROLE_KEY` must only be used server-side; FitGoal uses it only in server actions for admin-safe database management.
+
+Google sign-in is optional for normal users. Guest mode stores FitGoal data in browser localStorage. When signed in with Google, FitGoal also saves a `user_state_snapshots` row with the current app state and a compact performance summary.
+
+## Admin setup
+
+The `/admin` route is protected by Supabase SSR cookie auth and the `profiles.role` field.
+
+1. Sign in once with Google so Supabase creates your auth user and profile row.
+2. In Supabase SQL editor, promote your user:
+
+```sql
+update public.profiles
+set role = 'admin'
+where email = 'your-email@example.com';
+```
+
+Admins can manage global foods, exercises, and workout programs. Normal users can read public food/exercise/program data, but cannot create, update, or delete global records. User food logs, workout logs, hydration logs, progress entries, and state snapshots are private to the owning user through RLS.
 
 ## Prisma option
 
@@ -75,13 +99,16 @@ The food schema is designed for later integrations with USDA FoodData Central, O
 
 ```text
 app/
+  admin/            protected admin dashboard and server actions
+  auth/callback/    Supabase OAuth callback
+  login/            Google OAuth login
   onboarding/       quiz flow
   dashboard/        daily plan, targets, meals
   workouts/[id]/    workout detail page
   nutrition/        food library, logging, custom foods, combinations
   progress/         progress tracker
 components/         shared app shell and cards
-lib/                types, seed data, program data, calculators, generators, storage, Supabase client
+lib/                types, seed data, program data, calculators, generators, storage, Supabase clients
 supabase/           SQL schema with RLS policies
 prisma/             optional Prisma schema
 ```
