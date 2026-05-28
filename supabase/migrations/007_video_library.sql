@@ -9,6 +9,9 @@ create table if not exists public.video_library (
   video_url text not null,
   coach_name text not null default 'FitGoal Coach',
   tags text[] not null default '{}',
+  target_muscles text[] not null default '{}',
+  coach_tips text[] not null default '{}',
+  safety_notes text[] not null default '{}',
   calories_estimate integer,
   related_exercise_id text,
   related_food_id text,
@@ -25,9 +28,11 @@ drop policy if exists "Admins can manage videos" on public.video_library;
 create policy "Anyone can read videos" on public.video_library for select using (true);
 create policy "Admins can manage videos" on public.video_library for all using (public.is_admin()) with check (public.is_admin());
 
-insert into public.video_library (id, title, category, body_part, difficulty, duration_seconds, thumbnail_url, video_url, coach_name, tags, calories_estimate, related_exercise_id, like_count)
+insert into public.video_library (id, title, category, body_part, difficulty, duration_seconds, thumbnail_url, video_url, coach_name, tags, target_muscles, coach_tips, safety_notes, calories_estimate, related_exercise_id, like_count)
 values
-  ('full-body-10-min-beginner', '10-minute full body starter', 'Full body', 'Total body', 'beginner', 600, 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=900&q=80', 'https://www.youtube.com/results?search_query=10+minute+beginner+full+body+workout+follow+along', 'Coach Maya', array['beginner','no equipment','follow along'], 85, 'bodyweight-squat', 1240),
-  ('core-plank-fix', 'Stop sagging in planks', 'Abs / core', 'Core', 'beginner', 45, 'https://images.unsplash.com/photo-1517964603305-11c0f6f66012?auto=format&fit=crop&w=900&q=80', 'https://www.youtube.com/results?search_query=plank+form+mistakes+beginner+short', 'Coach Dan', array['plank','form fix','core'], 8, 'plank', 890),
-  ('diet-deficit-no-spot', 'Belly fat truth in 45 seconds', 'Diet tips', 'Nutrition', 'beginner', 45, 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=900&q=80', 'https://www.youtube.com/results?search_query=belly+fat+spot+reduction+myth+calorie+deficit', 'Coach Noor', array['fat loss','calorie deficit','no spot reduction'], null, null, 2450)
+  ('demo-bodyweight-squat', 'Bodyweight squat: clean reps only', 'Legs', 'Legs', 'beginner', 70, 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80', 'https://www.youtube.com/results?search_query=bodyweight+squat+proper+form+beginner+demonstration', 'Coach Noor', array['exercise demo','squat','legs','beginner'], array['quads','glutes','hamstrings','core'], array['Keep heels heavy','Track knees in line with toes','Use a chair target if depth feels messy'], array['Use pain-free depth','Slow down if knees cave inward'], 18, 'bodyweight-squat', 1380),
+  ('demo-plank', 'Plank setup: ribs down, glutes on', 'Abs / core', 'Core', 'beginner', 55, 'https://images.unsplash.com/photo-1517964603305-11c0f6f66012?auto=format&fit=crop&w=900&q=80', 'https://www.youtube.com/results?search_query=plank+proper+form+beginner+demonstration', 'Coach Dan', array['exercise demo','plank','core','form'], array['abs','deep core','shoulders','glutes'], array['Elbows under shoulders','Breathe through the hold','End the set before your hips sag'], array['Drop to knees if your lower back feels loaded'], 8, 'plank', 940),
+  ('belly-fat-total-loss', 'Belly fat reduces through total fat loss', 'Diet tips', 'Nutrition', 'beginner', 48, 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=900&q=80', 'https://www.youtube.com/results?search_query=belly+fat+spot+reduction+myth+calorie+deficit+strength+cardio+sleep', 'Coach Noor', array['belly fat','fat loss','no spot reduction','calorie deficit'], array['total body'], array['Pair a small calorie deficit with strength, cardio, protein, sleep, and steps'], array['Avoid extreme deficits and crash diets'], 0, null, 3200),
+  ('plan-beginner-7-day', 'Beginner 7-day training plan', 'Beginner tips', 'Full plan', 'beginner', 90, 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80', 'https://www.youtube.com/results?search_query=beginner+7+day+workout+plan+strength+cardio+mobility', 'Coach Dan', array['beginner plan','weekly plan','strength','cardio'], array['full body'], array['Train 3 strength days, 2 cardio days, 2 recovery days','Repeat the week before progressing'], array['Leave one or two reps in reserve on strength exercises'], 0, null, 1930),
+  ('nutrition-protein-30g', 'Build a 30g protein meal', 'Protein tips', 'Nutrition', 'beginner', 55, 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=900&q=80', 'https://www.youtube.com/results?search_query=30+gram+protein+meal+ideas+fitness', 'Coach Jay', array['nutrition short','protein','meal prep','muscle'], array['recovery'], array['Start with one palm of lean protein','Add carbs around training if energy is low'], array['Adjust portions to your calorie goal and dietary needs'], 0, null, 2410)
 on conflict (id) do nothing;

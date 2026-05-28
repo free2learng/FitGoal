@@ -266,6 +266,9 @@ function VideoForm({ video, compact = false }: { video?: any; compact?: boolean 
       <Input name="thumbnail_url" label="Thumbnail URL" defaultValue={video?.thumbnail_url} />
       <Input name="video_url" label="Video URL" defaultValue={video?.video_url} required />
       <Input name="tags" label="Tags" defaultValue={video?.tags?.join(", ")} />
+      <Input name="target_muscles" label="Target muscles" defaultValue={video?.target_muscles?.join(", ")} />
+      <Input name="coach_tips" label="Coach tips" defaultValue={video?.coach_tips?.join(", ")} />
+      <Input name="safety_notes" label="Safety notes" defaultValue={video?.safety_notes?.join(", ")} />
       {!compact && (
         <>
           <Input name="calories_estimate" label="Calories estimate" type="number" defaultValue={video?.calories_estimate ?? ""} />

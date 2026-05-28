@@ -248,6 +248,9 @@ export type FitnessVideo = {
   videoUrl: string;
   coachName: string;
   tags: string[];
+  targetMuscles: string[];
+  coachTips: string[];
+  safetyNotes: string[];
   caloriesEstimate?: number;
   relatedExerciseId?: string;
   relatedFoodId?: string;
