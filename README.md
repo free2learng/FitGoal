@@ -41,6 +41,54 @@ Open `http://localhost:3000`.
 
 The user fitness MVP still works with browser localStorage for guest mode. Supabase credentials are required for Google login and the protected admin dashboard.
 
+## Ownership Transfer Checklist
+
+Use this checklist when moving FitGoal under the accounts linked to `free2learng@gmail.com`.
+
+### GitHub
+
+1. Confirm the worktree is clean with `git status`.
+2. Confirm `.env`, `.env.local`, and `.env.*.local` are ignored.
+3. Keep `.env.example` committed as the only environment template.
+4. Transfer the GitHub repository ownership to the GitHub account linked to `free2learng@gmail.com`.
+5. Confirm the transfer from the receiving account email.
+6. After transfer, update local `origin` if the repository URL changes:
+
+```bash
+git remote set-url origin https://github.com/NEW_OWNER/fitgoal.git
+git remote -v
+```
+
+### Supabase
+
+1. Create a new Supabase project from the Supabase account linked to `free2learng@gmail.com`.
+2. Put Supabase values only in `.env.local` locally, and in Vercel environment variables for production.
+3. Do not commit `.env.local` or secrets.
+4. Run the migration files in `supabase/migrations/` in filename order, or run `supabase/schema.sql` as the all-in-one setup.
+5. Configure Google OAuth using the setup guide below.
+
+### Vercel
+
+1. Log in to the Vercel account linked to `free2learng@gmail.com`.
+2. Import the transferred GitHub repository into Vercel.
+3. Add environment variables in Vercel Project Settings:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+4. Deploy from the GitHub `main` branch.
+5. Connect a custom domain later if needed.
+6. Add the final production callback URL in Supabase Auth URL configuration:
+
+```text
+https://YOUR_DOMAIN.com/auth/callback
+```
+
+### Railway
+
+Do not add Railway unless backend/server jobs are actually needed.
+
+Use Railway later only for background jobs, external API sync, AI workers, cron jobs, or separate backend services.
+
 ## Supabase Google Login Setup
 
 1. Create a Supabase project at `https://supabase.com`.
@@ -79,12 +127,6 @@ http://localhost:3000/auth/callback
 
 ```text
 https://YOUR_DOMAIN.com/auth/callback
-```
-
-For the current Vercel app, that is:
-
-```text
-https://fitgoal-ten.vercel.app/auth/callback
 ```
 
 15. Restart the local Next.js dev server after editing `.env.local`.
@@ -148,6 +190,7 @@ app/
 components/         shared app shell and cards
 lib/                types, seed data, program data, calculators, generators, storage, Supabase clients
 supabase/           SQL schema with RLS policies
+supabase/migrations SQL migration files for a new Supabase project
 prisma/             optional Prisma schema
 ```
 
