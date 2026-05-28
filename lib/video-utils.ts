@@ -3,10 +3,11 @@ export function youtubeEmbedUrl(url: string) {
 
   try {
     const parsed = new URL(url);
-    const host = parsed.hostname.replace("www.", "");
+    const host = parsed.hostname.replace("www.", "").replace("m.", "");
 
-    if (host === "youtube.com" && parsed.pathname.startsWith("/embed/")) {
-      return `https://www.youtube.com/embed/${parsed.pathname.split("/embed/")[1].split("?")[0]}`;
+    if ((host === "youtube.com" || host === "youtube-nocookie.com") && parsed.pathname.startsWith("/embed/")) {
+      const id = parsed.pathname.split("/embed/")[1].split("?")[0].split("/")[0];
+      return id ? `https://www.youtube.com/embed/${id}` : "";
     }
 
     if (host === "youtube.com" && parsed.pathname === "/watch") {
