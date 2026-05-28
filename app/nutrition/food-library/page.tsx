@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Check, Coffee, Heart, Plus, Search, Star, Trash2, Utensils } from "lucide-react";
+import { Check, Coffee, Heart, Plus, Star, Trash2, Utensils, Wand2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { FoodLogButton, FoodSearchCard, HeroCard, ToastNotification } from "@/components/PremiumUI";
 import { todayKey } from "@/lib/generators";
 import { foodLogTotals, foodToLogBase, scaleFoodLog, searchFoods } from "@/lib/nutrition";
 import { mealTemplates, nutritionFoods } from "@/lib/program-data";
@@ -236,24 +237,19 @@ export default function FoodLibraryPage() {
   return (
     <AppShell>
       <section className="space-y-5 px-5 py-5">
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-black text-zinc-600">
-          <ArrowLeft size={18} /> Dashboard
-        </Link>
+        <HeroCard
+          eyebrow="Food studio"
+          title="Log it fast."
+          body="Search, tap, done. Your dashboard updates the second you log a meal or drink."
+          tone="secondary"
+          icon={<Utensils size={24} />}
+        />
 
-        <div className="rounded-lg bg-ink p-5 text-white">
-          <p className="text-sm font-bold text-mint">Food logging</p>
-          <h1 className="mt-2 text-3xl font-black tracking-normal">Find, build, or save foods.</h1>
-          <p className="mt-3 text-sm leading-6 text-white/75">Search real everyday foods, drinks, cooked variations, templates, custom foods, favourites and combinations.</p>
-        </div>
-
-        <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
-          <div className="relative">
-            <Search className="absolute left-3 top-3.5 text-zinc-400" size={18} />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search coffee, tea, egg, latte..." className="h-12 w-full rounded-lg border border-zinc-200 pl-10 pr-3 text-sm font-bold outline-none focus:border-leaf" />
+        <FoodSearchCard query={query} onQueryChange={setQuery}>
             {query.trim() && (
-              <div className="absolute left-0 right-0 top-14 z-20 max-h-96 overflow-y-auto rounded-lg border border-zinc-200 bg-white p-2 shadow-xl">
+              <div className="absolute left-4 right-4 top-[4.75rem] z-20 max-h-96 overflow-y-auto rounded-[28px] border border-fit-border bg-fit-surfaceElevated p-2 shadow-premium backdrop-blur-2xl dark:border-white/10 dark:bg-fit-darkElevated">
                 {searchDropdownFoods.length === 0 ? (
-                  <p className="p-3 text-sm font-bold text-zinc-500">No match yet. Add it as a custom food below.</p>
+                  <p className="p-3 text-sm font-bold text-fit-mutedText">No match yet. Add it as a custom food below.</p>
                 ) : searchDropdownFoods.map((food) => (
                   <FoodDropdownRow
                     key={food.id}
@@ -266,10 +262,9 @@ export default function FoodLibraryPage() {
                 ))}
               </div>
             )}
-          </div>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
             {categoryChips.map((chip) => (
-              <button key={chip.id} type="button" onClick={() => setCategory(chip.id)} className={`shrink-0 rounded-lg px-3 py-2 text-xs font-black ${category === chip.id ? "bg-ink text-white" : "bg-zinc-100 text-zinc-700"}`}>
+              <button key={chip.id} type="button" onClick={() => setCategory(chip.id)} className={`shrink-0 rounded-full px-4 py-2 text-xs font-black transition-transform active:scale-95 ${category === chip.id ? "bg-fit-text text-white dark:bg-white dark:text-fit-bg" : "bg-fit-muted text-fit-mutedText dark:bg-white/5 dark:text-white/60"}`}>
                 {chip.label}
               </button>
             ))}
@@ -277,27 +272,27 @@ export default function FoodLibraryPage() {
 
           <div className="mt-4 grid grid-cols-2 gap-3">
             <label>
-              <span className="mb-2 block text-sm font-black text-ink">Serving</span>
-              <select value={servingMultiplier} onChange={(event) => setServingMultiplier(Number(event.target.value))} className="h-11 w-full rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-leaf">
+              <span className="mb-2 block text-sm font-black text-fit-text dark:text-white">Serving</span>
+              <select value={servingMultiplier} onChange={(event) => setServingMultiplier(Number(event.target.value))} className="h-12 w-full rounded-[20px] border border-fit-border bg-fit-muted px-3 text-sm font-bold outline-none focus:border-fit-primary dark:border-white/10 dark:bg-white/5">
                 {selectedFood.commonServingOptions.map((option) => <option key={option.label} value={option.multiplier}>{option.label}</option>)}
               </select>
             </label>
             <label>
-              <span className="mb-2 block text-sm font-black text-ink">Meal type</span>
-              <select value={mealType} onChange={(event) => setMealType(event.target.value as MealType)} className="h-11 w-full rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-leaf">
+              <span className="mb-2 block text-sm font-black text-fit-text dark:text-white">Meal type</span>
+              <select value={mealType} onChange={(event) => setMealType(event.target.value as MealType)} className="h-12 w-full rounded-[20px] border border-fit-border bg-fit-muted px-3 text-sm font-bold outline-none focus:border-fit-primary dark:border-white/10 dark:bg-white/5">
                 {mealTypes.map((type) => <option key={type} value={type}>{type}</option>)}
               </select>
             </label>
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => setStatus("eaten")} className={`h-11 rounded-lg text-sm font-black ${status === "eaten" ? "bg-leaf text-white" : "border border-zinc-200 text-ink"}`}>Eaten</button>
-            <button type="button" onClick={() => setStatus("planned")} className={`h-11 rounded-lg text-sm font-black ${status === "planned" ? "bg-sky text-ink" : "border border-zinc-200 text-ink"}`}>Planned</button>
+            <button type="button" onClick={() => setStatus("eaten")} className={`h-12 rounded-[20px] text-sm font-black transition-transform active:scale-95 ${status === "eaten" ? "bg-fit-success text-fit-bg" : "border border-fit-border text-fit-text dark:border-white/10 dark:text-white"}`}>Eaten</button>
+            <button type="button" onClick={() => setStatus("planned")} className={`h-12 rounded-[20px] text-sm font-black transition-transform active:scale-95 ${status === "planned" ? "bg-fit-accent text-fit-bg" : "border border-fit-border text-fit-text dark:border-white/10 dark:text-white"}`}>Planned</button>
           </div>
-        </article>
+        </FoodSearchCard>
 
-        <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
-          <h2 className="text-xl font-black text-ink">Today&apos;s logged foods</h2>
+        <article className="rounded-[32px] border border-fit-border bg-fit-surfaceElevated p-5 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
+          <h2 className="text-2xl font-black text-fit-text dark:text-white">Today&apos;s food</h2>
           <div className="mt-3 grid grid-cols-4 gap-2 text-center text-xs font-black">
             <Macro label="Cal" value={foodLogTotals(todaysLogs).calories} />
             <Macro label="Pro" value={`${foodLogTotals(todaysLogs).protein}g`} />
@@ -306,25 +301,25 @@ export default function FoodLibraryPage() {
           </div>
           <div className="mt-3 space-y-2">
             {topLoggedFoods.length === 0 ? (
-              <p className="rounded-lg bg-zinc-50 p-3 text-sm font-semibold text-zinc-500">Logged foods will appear here immediately.</p>
+              <p className="rounded-[22px] bg-fit-muted p-3 text-sm font-semibold text-fit-mutedText dark:bg-white/5">Logged foods will appear here immediately.</p>
             ) : topLoggedFoods.map((log) => (
-              <div key={log.id} className="rounded-lg bg-mint/15 p-3">
-                <p className="font-black text-ink">{log.foodName}</p>
-                <p className="text-sm text-zinc-600">{log.mealType} - {log.calories} cal - {log.protein}g protein</p>
+              <div key={log.id} className="animate-success-pop rounded-[24px] bg-fit-success/15 p-3">
+                <p className="font-black text-fit-text dark:text-white">{log.foodName}</p>
+                <p className="text-sm text-fit-mutedText">{log.mealType} - {log.calories} cal - {log.protein}g protein</p>
               </div>
             ))}
           </div>
         </article>
 
-        <FoodRail title="Common drinks" icon={<Coffee size={17} />} foods={commonDrinks} onPick={pickFood} onLog={logFood} isLogged={recentlyLogged} state={state} onState={updateState} />
-        <FoodRail title="Recent foods" foods={recentFoods} onPick={pickFood} onLog={logFood} isLogged={recentlyLogged} state={state} onState={updateState} empty="No recent foods yet." />
+        <FoodRail title="Recently logged" foods={recentFoods} onPick={pickFood} onLog={logFood} isLogged={recentlyLogged} state={state} onState={updateState} empty="No recent foods yet." />
+        <FoodRail title="Smart suggestions" icon={<Wand2 size={17} />} foods={favoriteFoods.length ? favoriteFoods : commonDrinks.slice(0, 6)} onPick={pickFood} onLog={logFood} isLogged={recentlyLogged} state={state} onState={updateState} empty="Tap the star on foods to teach FitGoal." />
+        <FoodRail title="Popular today" icon={<Coffee size={17} />} foods={mostLoggedFoods.length ? mostLoggedFoods : commonDrinks} onPick={pickFood} onLog={logFood} isLogged={recentlyLogged} state={state} onState={updateState} empty="Popular foods will appear here." />
         <FoodRail title="Favourites" icon={<Heart size={17} />} foods={favoriteFoods} onPick={pickFood} onLog={logFood} isLogged={recentlyLogged} state={state} onState={updateState} empty="Tap the star on a food to favourite it." />
-        <FoodRail title="Most logged" foods={mostLoggedFoods} onPick={pickFood} onLog={logFood} isLogged={recentlyLogged} state={state} onState={updateState} empty="Most logged foods will appear here." />
 
         {!query.trim() && (
-          <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
-            <h2 className="text-xl font-black text-ink">Browse food library</h2>
-            <p className="mt-1 text-sm text-zinc-600">Search above for a shorter dropdown when logging a specific food.</p>
+          <article className="rounded-[32px] border border-fit-border bg-fit-surfaceElevated p-5 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
+            <h2 className="text-2xl font-black text-fit-text dark:text-white">Build your meal</h2>
+            <p className="mt-1 text-sm font-bold text-fit-mutedText">Search above for a shorter dropdown when logging a specific food.</p>
             <div className="mt-3 max-h-[420px] space-y-2 overflow-y-auto">
               {browseFoods.map((food) => (
                 <FoodSearchRow key={food.id} food={food} selected={selectedFood.id === food.id} favorite={favoriteIds.includes(food.id)} logged={recentlyLogged(food)} onPick={pickFood} onLog={logFood} state={state} onState={updateState} />
@@ -376,11 +371,7 @@ export default function FoodLibraryPage() {
 
         <LogSummary title="Eaten today" logs={eatenLogs} totals={eatenTotals} state={state} onChange={updateState} />
         <LogSummary title="Planned later" logs={plannedLogs} totals={plannedTotals} state={state} onChange={updateState} planned />
-        {toast && (
-          <div className="fixed bottom-24 left-5 right-5 z-50 mx-auto flex max-w-md animate-pulse items-center gap-2 rounded-lg bg-ink px-4 py-3 text-sm font-black text-white shadow-xl">
-            <Check size={18} className="text-mint" /> {toast}
-          </div>
-        )}
+        {toast && <ToastNotification message={toast} />}
       </section>
     </AppShell>
   );
@@ -388,9 +379,9 @@ export default function FoodLibraryPage() {
 
 function FoodRail({ title, icon, foods, onPick, onLog, isLogged, state, onState, empty = "Nothing here yet." }: { title: string; icon?: React.ReactNode; foods: FoodItem[]; onPick: (food: FoodItem) => void; onLog: (food: FoodItem) => void; isLogged: (food: FoodItem) => boolean; state: FitGoalState | null; onState: (state: FitGoalState) => void; empty?: string }) {
   return (
-    <article className="rounded-lg border border-zinc-100 bg-white p-4 shadow-sm">
-      <h2 className="flex items-center gap-2 text-lg font-black text-ink">{icon}{title}</h2>
-      {foods.length === 0 ? <p className="mt-2 text-sm font-semibold text-zinc-500">{empty}</p> : (
+    <article className="rounded-[32px] border border-fit-border bg-fit-surfaceElevated p-4 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
+      <h2 className="flex items-center gap-2 text-xl font-black text-fit-text dark:text-white">{icon}{title}</h2>
+      {foods.length === 0 ? <p className="mt-2 text-sm font-semibold text-fit-mutedText">{empty}</p> : (
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
           {foods.map((food) => (
             <FoodChip key={food.id} food={food} logged={isLogged(food)} onPick={onPick} onLog={onLog} state={state} onState={onState} />
@@ -404,16 +395,16 @@ function FoodRail({ title, icon, foods, onPick, onLog, isLogged, state, onState,
 function FoodChip({ food, logged, onPick, onLog, state, onState }: { food: FoodItem; logged: boolean; onPick: (food: FoodItem) => void; onLog: (food: FoodItem) => void; state: FitGoalState | null; onState: (state: FitGoalState) => void }) {
   const isFavorite = Boolean(state?.favoriteFoodIds?.includes(food.id));
   return (
-    <div className="min-w-44 shrink-0 rounded-lg bg-zinc-50 p-3">
+    <div className="min-w-48 shrink-0 rounded-[26px] bg-fit-muted p-3 dark:bg-white/5">
       <button onClick={() => onPick(food)} className="w-full text-left">
-        <span className="block font-black text-ink">{food.name}</span>
-        <span className="text-xs text-zinc-500">{food.calories} cal - {food.protein}g protein</span>
+        <span className="block font-black text-fit-text dark:text-white">{food.name}</span>
+        <span className="text-xs font-bold text-fit-mutedText">{food.calories} cal - {food.protein}g protein</span>
       </button>
       <div className="mt-2 flex gap-2">
-        <button onClick={() => onLog(food)} disabled={!state || logged} className={`flex-1 rounded-lg py-2 text-xs font-black text-white transition-all disabled:opacity-90 ${logged ? "scale-[1.02] bg-leaf" : "bg-ink"}`}>
-          {logged ? <span className="inline-flex items-center gap-1"><Check size={14} /> Logged</span> : "Log"}
+        <button onClick={() => onLog(food)} disabled={!state || logged} className="flex-1 disabled:opacity-90">
+          <FoodLogButton logged={logged} disabled={!state || logged} />
         </button>
-        {state && <button onClick={() => onState(toggleFavoriteFood(state, food.id))} className={`grid h-8 w-8 place-items-center rounded-lg ${isFavorite ? "bg-peach/30 text-ink" : "bg-white text-zinc-500"}`} aria-label="Favourite food"><Star size={15} /></button>}
+        {state && <button onClick={() => onState(toggleFavoriteFood(state, food.id))} className={`grid h-11 w-11 place-items-center rounded-[18px] ${isFavorite ? "bg-fit-warning text-fit-bg" : "bg-fit-surface text-fit-mutedText dark:bg-white/10"}`} aria-label="Favourite food"><Star size={15} /></button>}
       </div>
     </div>
   );
@@ -424,10 +415,10 @@ function FoodDropdownRow({ food, logged, disabled, onPick, onLog }: { food: Food
   const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
 
   return (
-    <div className="grid grid-cols-[1fr_72px_74px] items-center gap-2 rounded-lg p-2 hover:bg-zinc-50">
+    <div className="grid grid-cols-[1fr_72px_82px] items-center gap-2 rounded-[22px] p-2 hover:bg-fit-muted dark:hover:bg-white/5">
       <button type="button" onClick={onPick} className="min-w-0 text-left">
-        <span className="block truncate text-sm font-black text-ink">{food.name}</span>
-        <span className="block truncate text-xs font-semibold text-zinc-500">
+        <span className="block truncate text-sm font-black text-fit-text dark:text-white">{food.name}</span>
+        <span className="block truncate text-xs font-semibold text-fit-mutedText">
           {food.subcategory} - {food.calories} cal per {food.servingSize}{food.servingUnit}
         </span>
       </button>
@@ -439,12 +430,12 @@ function FoodDropdownRow({ food, logged, disabled, onPick, onLog }: { food: Food
           type="number"
           min="0.25"
           step="0.25"
-          className="h-10 w-full rounded-lg border border-zinc-200 px-2 text-center text-sm font-black outline-none focus:border-leaf"
+          className="h-11 w-full rounded-[18px] border border-fit-border bg-fit-muted px-2 text-center text-sm font-black outline-none focus:border-fit-primary dark:border-white/10 dark:bg-white/5"
           aria-label={`Quantity for ${food.name}`}
         />
       </label>
-      <button type="button" onClick={() => onLog(safeQuantity)} disabled={disabled} className={`h-10 rounded-lg px-3 text-xs font-black text-white transition-all disabled:opacity-90 ${logged ? "scale-[1.03] bg-leaf" : "bg-ink"}`}>
-        {logged ? <span className="inline-flex items-center gap-1"><Check size={14} /> Logged</span> : "Log"}
+      <button type="button" onClick={() => onLog(safeQuantity)} disabled={disabled} className="disabled:opacity-90">
+        <FoodLogButton logged={logged} disabled={disabled} />
       </button>
     </div>
   );
@@ -453,11 +444,11 @@ function FoodDropdownRow({ food, logged, disabled, onPick, onLog }: { food: Food
 function FoodSearchRow({ food, selected, favorite, logged, onPick, onLog, state, onState }: { food: FoodItem; selected: boolean; favorite: boolean; logged: boolean; onPick: (food: FoodItem) => void; onLog: (food: FoodItem, override?: { multiplier?: number }) => void; state: FitGoalState | null; onState: (state: FitGoalState) => void }) {
   const [quantity, setQuantity] = useState(1);
   return (
-    <div className={`rounded-lg p-3 ${selected ? "bg-ink text-white" : "bg-zinc-50 text-ink"}`}>
+    <div className={`rounded-[26px] p-3 ${selected ? "bg-fit-text text-white dark:bg-white dark:text-fit-bg" : "bg-fit-muted text-fit-text dark:bg-white/5 dark:text-white"}`}>
       <button onClick={() => onPick(food)} className="w-full text-left">
         <span className="block font-black">{food.name}</span>
-        <span className={`text-xs ${selected ? "text-white/70" : "text-zinc-500"}`}>{food.subcategory} - {food.calories} cal - {food.servingSize}{food.servingUnit}</span>
-        <span className={`mt-1 block text-xs ${selected ? "text-white/70" : "text-zinc-500"}`}>{food.verifiedStatus} - {food.source} - {food.tags.slice(0, 4).join(", ")}</span>
+        <span className={`text-xs font-bold ${selected ? "text-white/70 dark:text-fit-bg/70" : "text-fit-mutedText"}`}>{food.subcategory} - {food.calories} cal - {food.servingSize}{food.servingUnit}</span>
+        <span className={`mt-1 block text-xs font-bold ${selected ? "text-white/70 dark:text-fit-bg/70" : "text-fit-mutedText"}`}>{food.verifiedStatus} - {food.source} - {food.tags.slice(0, 4).join(", ")}</span>
       </button>
       <div className="mt-2 grid grid-cols-[76px_1fr_40px] gap-2">
         <input
@@ -467,12 +458,12 @@ function FoodSearchRow({ food, selected, favorite, logged, onPick, onLog, state,
           min="0.25"
           step="0.25"
           aria-label={`Quantity for ${food.name}`}
-          className={`h-10 rounded-lg border px-2 text-center text-xs font-black outline-none ${selected ? "border-white/20 bg-white/10 text-white" : "border-zinc-200 bg-white text-ink"}`}
+          className={`h-11 rounded-[18px] border px-2 text-center text-xs font-black outline-none ${selected ? "border-white/20 bg-white/10 text-white dark:text-fit-bg" : "border-fit-border bg-white text-fit-text"}`}
         />
-        <button onClick={() => onLog(food, { multiplier: Number.isFinite(quantity) && quantity > 0 ? quantity : 1 })} disabled={!state || logged} className={`h-10 rounded-lg text-xs font-black transition-all disabled:opacity-90 ${logged ? "scale-[1.02] bg-leaf text-white" : selected ? "bg-mint text-ink" : "bg-ink text-white"}`}>
-          {logged ? <span className="inline-flex items-center gap-1"><Check size={14} /> Logged</span> : "Log selected"}
+        <button onClick={() => onLog(food, { multiplier: Number.isFinite(quantity) && quantity > 0 ? quantity : 1 })} disabled={!state || logged} className="disabled:opacity-90">
+          <FoodLogButton logged={logged} disabled={!state || logged}>Log</FoodLogButton>
         </button>
-        {state && <button onClick={() => onState(toggleFavoriteFood(state, food.id))} className={`grid h-10 place-items-center rounded-lg ${favorite ? "bg-peach/30 text-ink" : "bg-white text-zinc-500"}`} aria-label="Favourite food"><Star size={16} /></button>}
+        {state && <button onClick={() => onState(toggleFavoriteFood(state, food.id))} className={`grid h-11 place-items-center rounded-[18px] ${favorite ? "bg-fit-warning text-fit-bg" : "bg-white text-fit-mutedText dark:bg-white/10"}`} aria-label="Favourite food"><Star size={16} /></button>}
       </div>
     </div>
   );

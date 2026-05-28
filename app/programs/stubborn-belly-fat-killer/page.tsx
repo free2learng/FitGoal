@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Flame, Info, ShieldAlert, Utensils } from "lucide-react";
+import { Flame, Info, Play, ShieldAlert, Utensils } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ExerciseDemoCard } from "@/components/ExerciseDemoCard";
+import { CalorieBalanceCard, ExerciseStoryCard, HeroCard } from "@/components/PremiumUI";
 import { calculateCaloriesBurned, deficitStatus, maintenanceCalories } from "@/lib/calories";
 import { calorieTarget, todayKey } from "@/lib/generators";
 import { foodLogTotals } from "@/lib/nutrition";
@@ -63,108 +64,78 @@ export default function StubbornBellyFatKillerPage() {
   return (
     <AppShell>
       <section className="space-y-5 px-5 py-5">
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm font-black text-zinc-600">
-          <ArrowLeft size={18} /> Dashboard
-        </Link>
+        <HeroCard
+          eyebrow="Beginner fat-loss program"
+          title={program.title}
+          body={program.subtitle}
+          tone="danger"
+          icon={<Flame size={24} />}
+          action={<Link href="#timeline" className="inline-flex h-12 items-center justify-center gap-2 rounded-[20px] bg-white px-5 text-sm font-black text-fit-bg transition-transform active:scale-95"><Play size={16} fill="currentColor" /> Start timeline</Link>}
+        />
 
-        <div className="rounded-lg bg-ink p-5 text-white">
-          <p className="text-sm font-bold text-mint">Beginner fat-loss program</p>
-          <h1 className="mt-2 text-3xl font-black tracking-normal">{program.title}</h1>
-          <p className="mt-3 text-sm leading-6 text-white/75">{program.subtitle}</p>
-        </div>
-
-        <article className="rounded-lg border border-peach/50 bg-peach/20 p-4">
-          <p className="flex items-center gap-2 text-sm font-black text-ink">
+        <article className="rounded-[30px] border border-fit-warning/30 bg-fit-warning/15 p-4">
+          <p className="flex items-center gap-2 text-sm font-black text-fit-text dark:text-white">
             <ShieldAlert size={18} /> No spot fat reduction claim
           </p>
-          <p className="mt-2 text-sm leading-6 text-zinc-700">
-            Belly fat reduces through total body fat loss. The reliable path is a sensible calorie deficit, strength training, cardio, sleep, recovery, and nutrition. This program trains your whole body and core, but it does not promise fat loss from only one area.
+          <p className="mt-2 text-sm font-bold leading-6 text-fit-mutedText dark:text-white/60">
+            Belly fat reduces through total fat loss, not spot reduction. Strength, cardio, nutrition, sleep, and a sensible calorie deficit do the work.
           </p>
         </article>
 
-        <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
-          <p className="flex items-center gap-2 text-sm font-bold text-leaf">
-            <Flame size={18} /> Calorie deficit dashboard
-          </p>
-          <h2 className="mt-2 text-2xl font-black text-ink">{dashboardStatus}</h2>
-          <p className="mt-2 text-sm leading-6 text-zinc-600">
-            This uses today&apos;s foods you logged and workout calories only after you mark today&apos;s workout as done. No food intake is guessed.
-          </p>
+        <CalorieBalanceCard
+          eaten={caloriesConsumed}
+          burned={workoutCaloriesBurned}
+          remaining={remainingToEat}
+          status={dashboardStatus}
+          percent={Math.min(100, Math.round((caloriesConsumed / intakeTarget) * 100))}
+        />
+
+        <article className="rounded-[32px] border border-fit-border bg-fit-surfaceElevated p-5 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
+          <p className="flex items-center gap-2 text-sm font-black text-fit-danger"><Flame size={18} /> Deficit details</p>
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <CalorieTile label="Intake target" value={intakeTarget} />
-            <CalorieTile label="Food eaten" value={caloriesConsumed} />
-            <CalorieTile label="Workout burned" value={workoutCaloriesBurned} />
-            <CalorieTile label="Net calories" value={summary.netCalories} />
-            <CalorieTile label="Target deficit" value={program.targetDailyDeficit} />
-            <CalorieTile label="Actual deficit" value={summary.deficit} />
+            <CalorieTile label="Target" value={intakeTarget} />
+            <CalorieTile label="Net" value={summary.netCalories} />
+            <CalorieTile label="Deficit" value={summary.deficit} />
+            <CalorieTile label="Goal" value={program.targetDailyDeficit} />
           </div>
           {!todaysFoodLogs.length && (
-            <Link href="/nutrition/food-library" className="mt-4 flex min-h-12 items-center justify-center rounded-lg bg-ink px-4 text-sm font-black text-white">
+            <Link href="/nutrition/food-library" className="mt-4 flex min-h-12 items-center justify-center rounded-[20px] bg-fit-text px-4 text-sm font-black text-white transition-transform active:scale-95 dark:bg-white dark:text-fit-bg">
               Log food to update this dashboard
             </Link>
           )}
           {!workoutCaloriesBurned && (
-            <p className="mt-3 rounded-lg bg-sky/15 p-3 text-sm font-bold text-ink">
+            <p className="mt-3 rounded-[20px] bg-fit-accent/15 p-3 text-sm font-bold text-fit-text dark:text-white">
               Planned workout burn: {plannedWorkoutCalories} cal. It will count here after you mark today&apos;s workout as done on the dashboard.
             </p>
           )}
-          <div className="mt-4 rounded-lg bg-zinc-50 p-3">
-            <div className="flex items-center justify-between text-sm font-black">
-              <span>Remaining calories to eat</span>
-              <span>{remainingToEat} cal</span>
-            </div>
-            <Progress value={Math.min(100, Math.round((caloriesConsumed / intakeTarget) * 100))} />
-            <div className="mt-3 flex items-center justify-between text-sm font-black">
-              <span>Burn or save remaining</span>
-              <span>{Math.max(0, summary.remainingDeficit)} cal</span>
-            </div>
-            <Progress value={Math.min(100, Math.round((summary.deficit / program.targetDailyDeficit) * 100))} tone="mint" />
-          </div>
-          <p className="mt-3 text-xs leading-5 text-zinc-500">
+          <p className="mt-3 text-xs font-bold leading-5 text-fit-mutedText">
             Calories are estimates and vary by body weight, intensity, and fitness level. MET estimates use the Compendium of Physical Activities concept where 1 MET is approximately 1 kcal/kg/hour.
           </p>
         </article>
 
-        <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
-          <p className="flex items-center gap-2 text-sm font-bold text-leaf">
+        <article className="rounded-[32px] border border-fit-border bg-fit-surfaceElevated p-5 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
+          <p className="flex items-center gap-2 text-sm font-bold text-fit-primary">
             <Info size={18} /> Goal system
           </p>
-          <h2 className="mt-2 text-2xl font-black text-ink">Fat loss and belly fat reduction</h2>
-          <p className="mt-2 text-sm leading-6 text-zinc-700">
+          <h2 className="mt-2 text-2xl font-black text-fit-text dark:text-white">Fat loss and belly fat reduction</h2>
+          <p className="mt-2 text-sm font-bold leading-6 text-fit-mutedText dark:text-white/55">
             Beginner targets usually work best around a 300-500 calorie daily deficit. Expected weekly fat loss is {program.weeklyFatLossEstimateKg}. Do not use extreme calorie restriction, skip protein, or train hard without recovery.
           </p>
         </article>
 
-        <div className="space-y-4">
+        <div id="timeline" className="flex snap-x gap-4 overflow-x-auto pb-2">
           {program.exercises.map((exercise) => {
             const calories = exerciseCalories.find((item) => item.name === exercise.name);
             return (
-              <div key={exercise.name} className="space-y-3">
-                <div className="rounded-lg bg-zinc-50 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h2 className="text-xl font-black text-ink">{exercise.name}</h2>
-                      <p className="mt-1 text-sm text-zinc-600">
-                        {exercise.sets} sets - {exercise.reps} - {exercise.restSeconds}s rest
-                      </p>
-                      <p className="mt-2 text-xs font-bold uppercase tracking-normal text-leaf">{exercise.difficulty}</p>
-                    </div>
-                    <div className="shrink-0 rounded-lg bg-white px-3 py-2 text-right shadow-sm">
-                      <p className="text-xs font-bold text-zinc-500">Calories</p>
-                      <p className="text-lg font-black text-ink">{calories?.total ?? 0}</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                    <div className="rounded-lg bg-white p-3">
-                      <p className="text-xs font-bold text-zinc-500">Per set</p>
-                      <p className="font-black">{calories?.perSet ?? 0} cal</p>
-                    </div>
-                    <div className="rounded-lg bg-white p-3">
-                      <p className="text-xs font-bold text-zinc-500">Total</p>
-                      <p className="font-black">{calories?.total ?? 0} cal</p>
-                    </div>
-                  </div>
-                </div>
+              <ExerciseStoryCard
+                key={exercise.name}
+                name={exercise.name}
+                meta={`${exercise.sets} sets - ${exercise.reps} - ${exercise.restSeconds}s rest`}
+                calories={calories?.total ?? 0}
+                difficulty={exercise.difficulty}
+                muscles={exercise.targetMuscles}
+                action={<a href={exercise.tutorialUrl} target="_blank" rel="noreferrer" className="flex h-12 items-center justify-center rounded-[20px] bg-fit-text text-sm font-black text-white transition-transform active:scale-95 dark:bg-white dark:text-fit-bg">Start exercise</a>}
+              >
                 <ExerciseDemoCard
                   exerciseName={exercise.name}
                   videoUrl={exercise.tutorialUrl}
@@ -174,12 +145,12 @@ export default function StubbornBellyFatKillerPage() {
                   commonMistakes={exercise.commonMistakes}
                   beginnerTips={exercise.beginnerTips}
                 />
-              </div>
+              </ExerciseStoryCard>
             );
           })}
         </div>
 
-        <Link href="/nutrition/food-library" className="flex h-14 items-center justify-center gap-2 rounded-lg bg-leaf text-base font-black text-white">
+        <Link href="/nutrition/food-library" className="flex h-14 items-center justify-center gap-2 rounded-[24px] bg-fit-text text-base font-black text-white shadow-premium transition-transform active:scale-95 dark:bg-white dark:text-fit-bg">
           <Utensils size={20} /> Open food library
         </Link>
       </section>
@@ -189,18 +160,10 @@ export default function StubbornBellyFatKillerPage() {
 
 function CalorieTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg bg-zinc-50 p-3">
-      <p className="text-xs font-bold uppercase tracking-normal text-zinc-500">{label}</p>
-      <p className="mt-1 text-2xl font-black text-ink">{value}</p>
-      <p className="text-xs font-semibold text-zinc-500">calories</p>
-    </div>
-  );
-}
-
-function Progress({ value, tone = "sky" }: { value: number; tone?: "sky" | "mint" }) {
-  return (
-    <div className="mt-2 h-2 rounded-full bg-zinc-200">
-      <div className={`h-2 rounded-full ${tone === "mint" ? "bg-mint" : "bg-sky"}`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+    <div className="rounded-[22px] bg-fit-muted p-3 dark:bg-white/5">
+      <p className="text-xs font-bold uppercase tracking-normal text-fit-mutedText">{label}</p>
+      <p className="mt-1 text-2xl font-black text-fit-text dark:text-white">{value}</p>
+      <p className="text-xs font-semibold text-fit-mutedText">calories</p>
     </div>
   );
 }

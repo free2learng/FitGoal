@@ -4,13 +4,59 @@
 
 :root {
   color-scheme: light;
+  --fit-bg: #f6f7fb;
+  --fit-surface: #ffffff;
+  --fit-surface-elevated: rgba(255, 255, 255, 0.88);
+  --fit-dark-surface: #10151f;
+  --fit-dark-elevated: rgba(22, 28, 40, 0.88);
+  --fit-text: #0b0f18;
+  --fit-primary: #7c5cff;
+  --fit-secondary: #00c2ff;
+  --fit-accent: #8cf2ff;
+  --fit-success: #52e0a1;
+  --fit-warning: #ffd166;
+  --fit-danger: #ff5d73;
+  --fit-muted: #f0f3f8;
+  --fit-muted-text: #6b7280;
+  --fit-border: rgba(14, 18, 28, 0.08);
 }
 
 body {
-  background: #fbfaf7;
-  color: #17211c;
+  background:
+    radial-gradient(circle at top left, rgba(124, 92, 255, 0.14), transparent 32rem),
+    radial-gradient(circle at top right, rgba(0, 194, 255, 0.14), transparent 28rem),
+    #f6f7fb;
+  color: var(--fit-text);
 }
 
 button, input, select {
   font: inherit;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --fit-bg: #090d14;
+    --fit-surface: #10151f;
+    --fit-surface-elevated: rgba(22, 28, 40, 0.88);
+    --fit-text: #f8fafc;
+    --fit-muted: rgba(255, 255, 255, 0.07);
+    --fit-muted-text: rgba(248, 250, 252, 0.64);
+    --fit-border: rgba(255, 255, 255, 0.1);
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(124, 92, 255, 0.18), transparent 30rem),
+      radial-gradient(circle at top right, rgba(0, 194, 255, 0.14), transparent 28rem),
+      #090d14;
+  }
 }
