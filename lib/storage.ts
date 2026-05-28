@@ -45,6 +45,7 @@ export function loadState(): FitGoalState | null {
     foodLogs: parsed.foodLogs ?? [],
     customFoods: parsed.customFoods ?? [],
     favoriteFoodIds: parsed.favoriteFoodIds ?? [],
+    favoriteVideoIds: parsed.favoriteVideoIds ?? [],
     hydrationLogs: parsed.hydrationLogs ?? [],
     hydrationAdjustments: parsed.hydrationAdjustments ?? {}
   };
@@ -57,7 +58,7 @@ export function saveState(state: FitGoalState) {
 }
 
 export function createState(profile: OnboardingProfile): FitGoalState {
-  const state = { account: loadAccount(), profile, completedWorkoutDates: [], skippedDates: [], progress: initialProgress(profile), foodLogs: [], customFoods: [], favoriteFoodIds: [], hydrationLogs: [], hydrationAdjustments: {} };
+  const state = { account: loadAccount(), profile, completedWorkoutDates: [], skippedDates: [], progress: initialProgress(profile), foodLogs: [], customFoods: [], favoriteFoodIds: [], favoriteVideoIds: [], hydrationLogs: [], hydrationAdjustments: {} };
   saveState(state);
   return state;
 }
@@ -117,6 +118,15 @@ export function toggleFavoriteFood(state: FitGoalState, foodId: string) {
   if (existing.has(foodId)) existing.delete(foodId);
   else existing.add(foodId);
   const next = { ...state, favoriteFoodIds: Array.from(existing) };
+  saveState(next);
+  return next;
+}
+
+export function toggleFavoriteVideo(state: FitGoalState, videoId: string) {
+  const existing = new Set(state.favoriteVideoIds ?? []);
+  if (existing.has(videoId)) existing.delete(videoId);
+  else existing.add(videoId);
+  const next = { ...state, favoriteVideoIds: Array.from(existing) };
   saveState(next);
   return next;
 }

@@ -63,7 +63,7 @@ export default function StubbornBellyFatKillerPage() {
 
   return (
     <AppShell>
-      <section className="space-y-5 px-5 py-5">
+      <section className="mx-auto w-full max-w-5xl space-y-5 px-4 py-5 sm:px-5">
         <HeroCard
           eyebrow="Beginner fat-loss program"
           title={program.title}
@@ -92,7 +92,7 @@ export default function StubbornBellyFatKillerPage() {
 
         <article className="rounded-[32px] border border-fit-border bg-fit-surfaceElevated p-5 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
           <p className="flex items-center gap-2 text-sm font-black text-fit-danger"><Flame size={18} /> Deficit details</p>
-          <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="mt-4 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
             <CalorieTile label="Target" value={intakeTarget} />
             <CalorieTile label="Net" value={summary.netCalories} />
             <CalorieTile label="Deficit" value={summary.deficit} />

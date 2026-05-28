@@ -1,4 +1,5 @@
 import { Exercise, FitnessLevel, Goal, OnboardingProfile, Workout, WorkoutType } from "@/lib/types";
+import { enrichExercise } from "@/lib/exercise-coaching";
 
 const tutorial = (query: string) => `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
 
@@ -56,7 +57,7 @@ const levelConfig: Record<FitnessLevel, { sets: number; duration: number; rest: 
 
 function strengthExercise(name: string, reps: string, targetMuscles: string[], level: FitnessLevel, coachingTip: string): Exercise {
   const config = levelConfig[level];
-  return {
+  return enrichExercise({
     name,
     sets: config.sets,
     reps,
@@ -65,12 +66,12 @@ function strengthExercise(name: string, reps: string, targetMuscles: string[], l
     targetMuscles,
     difficulty: config.difficulty,
     coachingTip
-  };
+  });
 }
 
 function cardioExercise(name: string, reps: string, level: FitnessLevel, coachingTip: string): Exercise {
   const config = levelConfig[level];
-  return {
+  return enrichExercise({
     name,
     sets: level === "beginner" ? 1 : 2,
     reps,
@@ -79,7 +80,7 @@ function cardioExercise(name: string, reps: string, level: FitnessLevel, coachin
     targetMuscles: ["heart", "lungs", "legs"],
     difficulty: config.difficulty,
     coachingTip
-  };
+  });
 }
 
 function equipmentName(profile: OnboardingProfile, bodyweight: string, dumbbells: string, gym: string) {
@@ -169,7 +170,8 @@ function exercisesFor(template: DayTemplate, profile: OnboardingProfile): Exerci
     strengthExercise(squat, "10-12", ["quads", "glutes"], level, "Start with control."),
     strengthExercise(press, "8-10", ["chest", "triceps"], level, "Brace first."),
     strengthExercise(row, "10 each side", ["back", "biceps"], level, "Pull smoothly."),
-    strengthExercise(hinge, "10-12", ["hamstrings", "glutes"], level, "Hinge from the hips.")
+    strengthExercise(hinge, "10-12", ["hamstrings", "glutes"], level, "Hinge from the hips."),
+    strengthExercise("Wall Sit", "25-40 sec", ["quads", "glutes"], level, "Hold the cleanest position you can breathe through.")
   ];
 }
 

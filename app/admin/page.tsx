@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Database, Dumbbell, LogOut, Plus, Search, ShieldCheck, UsersRound } from "lucide-react";
+import { Database, Dumbbell, LogOut, Plus, Search, ShieldCheck, UsersRound, Video } from "lucide-react";
 import { logout } from "@/app/login/actions";
-import { deleteExercise, deleteFood, deleteProgram, upsertExercise, upsertFood, upsertProgram } from "@/app/admin/actions";
+import { deleteExercise, deleteFood, deleteProgram, deleteVideo, upsertExercise, upsertFood, upsertProgram, upsertVideo } from "@/app/admin/actions";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-type Tab = "foods" | "exercises" | "programs" | "users";
+type Tab = "foods" | "exercises" | "programs" | "videos" | "users";
 
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ tab?: Tab; q?: string }> }) {
   const params = await searchParams;
@@ -22,21 +22,22 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   if (profile?.role !== "admin") redirect("/dashboard?permission=denied");
 
   const admin = createSupabaseAdminClient();
-  const [foods, exercises, programs, users] = await Promise.all([
+  const [foods, exercises, programs, videos, users] = await Promise.all([
     admin.from("nutrition_foods").select("*").ilike("name", `%${q}%`).order("name").limit(40),
     admin.from("exercise_library").select("*").ilike("name", `%${q}%`).order("name").limit(40),
     admin.from("workout_programs").select("*").ilike("title", `%${q}%`).order("title").limit(40),
+    admin.from("video_library").select("*").ilike("title", `%${q}%`).order("created_at", { ascending: false }).limit(40),
     admin.from("profiles").select("id,email,full_name,role,goal,created_at").or(q ? `email.ilike.%${q}%,full_name.ilike.%${q}%` : "role.ilike.%%").order("created_at", { ascending: false }).limit(50)
   ]);
 
   return (
-    <main className="min-h-screen bg-[#f6f7fb] px-5 py-5 text-[#0b0f18]">
+    <main className="min-h-screen overflow-x-hidden bg-[#f6f7fb] px-4 py-5 text-[#0b0f18] sm:px-5">
       <div className="mx-auto max-w-6xl space-y-5">
         <header className="rounded-[32px] bg-[#0b0f18] p-5 text-white shadow-premium">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="flex items-center gap-2 text-sm font-black text-fit-accent"><ShieldCheck size={18} /> Admin control</p>
-              <h1 className="mt-2 text-4xl font-black leading-none">FitGoal Admin</h1>
+              <h1 className="mt-2 text-[clamp(2rem,9vw,3.5rem)] font-black leading-none">FitGoal Admin</h1>
               <p className="mt-2 text-sm font-bold text-white/60">{profile?.email ?? user.email}</p>
             </div>
             <form action={logout}>
@@ -49,6 +50,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           <AdminTab href="/admin?tab=foods" active={tab === "foods"} icon={<Database size={17} />} label="Foods" />
           <AdminTab href="/admin?tab=exercises" active={tab === "exercises"} icon={<Dumbbell size={17} />} label="Exercises" />
           <AdminTab href="/admin?tab=programs" active={tab === "programs"} icon={<Plus size={17} />} label="Programs" />
+          <AdminTab href="/admin?tab=videos" active={tab === "videos"} icon={<Video size={17} />} label="Videos" />
           <AdminTab href="/admin?tab=users" active={tab === "users"} icon={<UsersRound size={17} />} label="Users" />
         </nav>
 
@@ -61,6 +63,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         {tab === "foods" && <FoodsPanel rows={foods.data ?? []} />}
         {tab === "exercises" && <ExercisesPanel rows={exercises.data ?? []} programs={programs.data ?? []} />}
         {tab === "programs" && <ProgramsPanel rows={programs.data ?? []} />}
+        {tab === "videos" && <VideosPanel rows={videos.data ?? []} />}
         {tab === "users" && <UsersPanel rows={users.data ?? []} />}
       </div>
     </main>
@@ -108,6 +111,19 @@ function ProgramsPanel({ rows }: { rows: any[] }) {
         <AdminRow key={program.id} title={program.title} meta={`${program.goal} / ${program.level}`}>
           <ProgramForm program={program} compact />
           <DeleteButton action={deleteProgram} id={program.id} label="Delete program" />
+        </AdminRow>
+      ))}
+    </AdminGrid>
+  );
+}
+
+function VideosPanel({ rows }: { rows: any[] }) {
+  return (
+    <AdminGrid title="Video hub" form={<VideoForm />}>
+      {rows.map((video) => (
+        <AdminRow key={video.id} title={video.title} meta={`${video.category} / ${video.body_part} - ${video.duration_seconds}s - ${video.difficulty}`}>
+          <VideoForm video={video} compact />
+          <DeleteButton action={deleteVideo} id={video.id} label="Delete video" />
         </AdminRow>
       ))}
     </AdminGrid>
@@ -172,7 +188,7 @@ function FoodForm({ food, compact = false }: { food?: any; compact?: boolean }) 
     <form action={upsertFood} className="grid gap-2">
       <Input name="id" label="ID" defaultValue={food?.id} placeholder="auto if blank" />
       <Input name="name" label="Name" defaultValue={food?.name} required />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         <Input name="category" label="Category" defaultValue={food?.category ?? "protein"} />
         <Input name="subcategory" label="Subcategory" defaultValue={food?.subcategory} />
         <Input name="serving_size" label="Serving size" type="number" step="0.1" defaultValue={food?.serving_size ?? 1} />
@@ -200,7 +216,7 @@ function ExerciseForm({ exercise, programs, compact = false }: { exercise?: any;
           {programs.map((program) => <option key={program.id} value={program.id}>{program.title}</option>)}
         </select>
       </label>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         <Input name="sets" label="Sets" type="number" defaultValue={exercise?.sets ?? 3} />
         <Input name="reps" label="Reps/duration" defaultValue={exercise?.reps ?? "10"} />
         <Input name="rest_seconds" label="Rest sec" type="number" defaultValue={exercise?.rest_seconds ?? 45} />
@@ -222,7 +238,7 @@ function ProgramForm({ program, compact = false }: { program?: any; compact?: bo
       <Input name="id" label="ID" defaultValue={program?.id} required />
       <Input name="title" label="Title" defaultValue={program?.title} required />
       <Input name="subtitle" label="Subtitle" defaultValue={program?.subtitle} />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid gap-2 sm:grid-cols-2">
         <Input name="goal" label="Goal" defaultValue={program?.goal ?? "fat-loss"} />
         <Input name="level" label="Level" defaultValue={program?.level ?? "beginner"} />
         <Input name="target_daily_deficit" label="Deficit" type="number" defaultValue={program?.target_daily_deficit ?? 0} />
@@ -230,6 +246,34 @@ function ProgramForm({ program, compact = false }: { program?: any; compact?: bo
       {!compact && <Input name="weekly_fat_loss_estimate" label="Weekly estimate" defaultValue={program?.weekly_fat_loss_estimate} />}
       <Input name="safety_note" label="Safety note" defaultValue={program?.safety_note} />
       <button className="mt-2 h-11 rounded-[18px] bg-[#0b0f18] text-sm font-black text-white">{program ? "Save program" : "Add program"}</button>
+    </form>
+  );
+}
+
+function VideoForm({ video, compact = false }: { video?: any; compact?: boolean }) {
+  return (
+    <form action={upsertVideo} className="grid gap-2">
+      <Input name="id" label="ID" defaultValue={video?.id} placeholder="auto if blank" />
+      <Input name="title" label="Title" defaultValue={video?.title} required />
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Input name="category" label="Category" defaultValue={video?.category ?? "Full body"} />
+        <Input name="body_part" label="Body part" defaultValue={video?.body_part ?? "Full body"} />
+        <Input name="difficulty" label="Difficulty" defaultValue={video?.difficulty ?? "beginner"} />
+        <Input name="duration_seconds" label="Seconds" type="number" defaultValue={video?.duration_seconds ?? 60} />
+        <Input name="coach_name" label="Coach" defaultValue={video?.coach_name ?? "FitGoal Coach"} />
+        <Input name="like_count" label="Likes" type="number" defaultValue={video?.like_count ?? 0} />
+      </div>
+      <Input name="thumbnail_url" label="Thumbnail URL" defaultValue={video?.thumbnail_url} />
+      <Input name="video_url" label="Video URL" defaultValue={video?.video_url} required />
+      <Input name="tags" label="Tags" defaultValue={video?.tags?.join(", ")} />
+      {!compact && (
+        <>
+          <Input name="calories_estimate" label="Calories estimate" type="number" defaultValue={video?.calories_estimate ?? ""} />
+          <Input name="related_exercise_id" label="Related exercise ID" defaultValue={video?.related_exercise_id ?? ""} />
+          <Input name="related_food_id" label="Related food ID" defaultValue={video?.related_food_id ?? ""} />
+        </>
+      )}
+      <button className="mt-2 h-11 rounded-[18px] bg-[#0b0f18] text-sm font-black text-white">{video ? "Save video" : "Add video"}</button>
     </form>
   );
 }

@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import type { ReactNode } from "react";
-import { Check, Droplets, Dumbbell, Flame, Home, LineChart, Play, Plus, Search, Sparkles, Target, Utensils, Waves } from "lucide-react";
+import { Check, Droplets, Dumbbell, Flame, Home, LineChart, Play, Plus, Search, Sparkles, Target, Utensils, Video, Waves } from "lucide-react";
+import { NumberStepper } from "@/components/NumberStepper";
 
 type TokenTone = "primary" | "secondary" | "accent" | "success" | "warning" | "danger";
 
@@ -23,19 +25,20 @@ export function BottomNav() {
     { href: "/programs/stubborn-belly-fat-killer", label: "Plan", icon: Flame },
     { href: "/workouts/today", label: "Workout", icon: Dumbbell },
     { href: "/nutrition/food-library", label: "Food", icon: Utensils },
+    { href: "/videos", label: "Videos", icon: Video },
     { href: "/progress", label: "Progress", icon: LineChart }
   ];
 
   return (
-    <nav className="sticky bottom-0 z-40 border-t border-fit-border/70 bg-fit-surface/80 px-3 py-2 shadow-[0_-16px_40px_rgba(10,15,13,0.08)] backdrop-blur-2xl dark:bg-fit-darkSurface/85">
-      <div className="grid grid-cols-5 gap-1 rounded-[28px] bg-fit-muted/70 p-1 dark:bg-white/5">
+    <nav className="sticky bottom-0 z-40 border-t border-fit-border/70 bg-fit-surface/80 px-2 py-2 shadow-[0_-16px_40px_rgba(10,15,13,0.08)] backdrop-blur-2xl dark:bg-fit-darkSurface/85 sm:px-3">
+      <div className="mx-auto grid max-w-4xl grid-cols-6 gap-1 rounded-[28px] bg-fit-muted/70 p-1 dark:bg-white/5">
         {items.map((item) => {
           const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href.split("/").slice(0, 3).join("/")));
           const Icon = item.icon;
           return (
-            <Link key={item.href} href={item.href} className={`group flex min-h-14 flex-col items-center justify-center gap-1 rounded-[22px] text-[11px] font-black transition-all duration-300 active:scale-95 ${active ? "bg-fit-bg text-fit-primary shadow-sm dark:bg-white dark:text-fit-bg" : "text-fit-mutedText hover:bg-white/70 dark:text-white/60 dark:hover:bg-white/10"}`}>
-              <Icon size={19} className={`transition-transform duration-300 ${active ? "-translate-y-0.5 scale-110" : "group-active:scale-90"}`} />
-              <span>{item.label}</span>
+            <Link key={item.href} href={item.href} className={`group flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-[22px] text-[9px] font-black transition-all duration-300 active:scale-95 min-[370px]:text-[10px] sm:text-[11px] ${active ? "bg-fit-bg text-fit-primary shadow-sm dark:bg-white dark:text-fit-bg" : "text-fit-mutedText hover:bg-white/70 dark:text-white/60 dark:hover:bg-white/10"}`}>
+              <Icon size={18} className={`transition-transform duration-300 ${active ? "-translate-y-0.5 scale-110" : "group-active:scale-90"}`} />
+              <span className="truncate">{item.label}</span>
             </Link>
           );
         })}
@@ -46,14 +49,14 @@ export function BottomNav() {
 
 export function HeroCard({ eyebrow, title, body, action, tone = "primary", icon }: { eyebrow?: string; title: string; body?: string; action?: ReactNode; tone?: TokenTone; icon?: ReactNode }) {
   return (
-    <section className={`relative overflow-hidden rounded-[34px] bg-gradient-to-br ${toneClasses[tone]} p-6 shadow-premium`}>
+    <section className={`relative overflow-hidden rounded-[30px] bg-gradient-to-br ${toneClasses[tone]} p-5 shadow-premium sm:rounded-[34px] sm:p-6`}>
       <div className="absolute -right-12 -top-14 h-40 w-40 rounded-full bg-white/20 blur-2xl" />
       <div className="absolute -bottom-16 left-10 h-36 w-36 rounded-full bg-black/10 blur-2xl" />
       <div className="relative">
         <div className="flex items-start justify-between gap-4">
           <div>
             {eyebrow && <p className="text-xs font-black uppercase tracking-[0.18em] opacity-75">{eyebrow}</p>}
-            <h1 className="mt-2 text-[2.4rem] font-black leading-[0.92] tracking-normal">{title}</h1>
+            <h1 className="mt-2 text-[clamp(2.05rem,10vw,3.6rem)] font-black leading-[0.92] tracking-normal">{title}</h1>
           </div>
           {icon && <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/20 backdrop-blur">{icon}</span>}
         </div>
@@ -99,16 +102,16 @@ export function StatCard({ label, value, suffix, icon, tone = "primary" }: { lab
 
 export function MissionCard({ title, focus, burn, completed, href = "/workouts/today" }: { title: string; focus: string; burn: number; completed: boolean; href?: string }) {
   return (
-    <article className="rounded-[34px] border border-fit-border bg-fit-surfaceElevated p-5 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
-      <div className="flex items-start justify-between gap-4">
+    <article className="rounded-[30px] border border-fit-border bg-fit-surfaceElevated p-4 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated sm:rounded-[34px] sm:p-5">
+      <div className="flex flex-col items-start justify-between gap-4 min-[390px]:flex-row">
         <div>
           <p className="flex items-center gap-2 text-sm font-black text-fit-primary dark:text-fit-accent"><Sparkles size={17} /> Today&apos;s mission</p>
-          <h2 className="mt-3 text-3xl font-black leading-none text-fit-text dark:text-white">{title}</h2>
+          <h2 className="mt-3 text-[clamp(1.8rem,8vw,2.35rem)] font-black leading-none text-fit-text dark:text-white">{title}</h2>
           <p className="mt-2 text-sm font-bold leading-6 text-fit-mutedText dark:text-white/60">{focus}</p>
         </div>
         <ProgressRing value={completed ? 100 : 18} label={completed ? "100" : "Go"} sublabel={completed ? "done" : "start"} tone={completed ? "success" : "primary"} />
       </div>
-      <div className="mt-5 flex items-center justify-between gap-3 rounded-[24px] bg-fit-muted p-3 dark:bg-white/5">
+      <div className="mt-5 flex flex-col gap-3 rounded-[24px] bg-fit-muted p-3 dark:bg-white/5 min-[390px]:flex-row min-[390px]:items-center min-[390px]:justify-between">
         <p className="text-sm font-black text-fit-text dark:text-white">{burn} kcal estimated burn</p>
         <Link href={href} className="inline-flex h-12 items-center justify-center gap-2 rounded-[20px] bg-fit-text px-5 text-sm font-black text-white shadow-sm transition-transform active:scale-95 dark:bg-white dark:text-fit-bg">
           <Play size={16} fill="currentColor" /> Start
@@ -120,15 +123,15 @@ export function MissionCard({ title, focus, burn, completed, href = "/workouts/t
 
 export function CalorieBalanceCard({ eaten, burned, remaining, status, percent }: { eaten: number; burned: number; remaining: number; status: string; percent: number }) {
   return (
-    <article className="rounded-[34px] border border-fit-border bg-fit-surfaceElevated p-5 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
-      <div className="flex items-center justify-between gap-4">
+    <article className="rounded-[30px] border border-fit-border bg-fit-surfaceElevated p-4 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated sm:rounded-[34px] sm:p-5">
+      <div className="flex flex-col items-start justify-between gap-4 min-[390px]:flex-row min-[390px]:items-center">
         <div>
           <p className="flex items-center gap-2 text-sm font-black text-fit-danger"><Flame size={17} /> Calorie balance</p>
           <h2 className="mt-2 text-2xl font-black leading-tight text-fit-text dark:text-white">{status}</h2>
         </div>
         <ProgressRing value={percent} label={`${Math.min(100, Math.max(0, percent))}%`} sublabel="today" tone={percent > 95 ? "warning" : "accent"} />
       </div>
-      <div className="mt-5 grid grid-cols-3 gap-2">
+      <div className="mt-5 grid grid-cols-1 gap-2 min-[360px]:grid-cols-3">
         <MiniStat label="Eaten" value={eaten} />
         <MiniStat label="Burned" value={burned} />
         <MiniStat label="Left" value={remaining} />
@@ -141,8 +144,8 @@ export function ProteinProgressCard({ eaten, target, perMeal }: { eaten: number;
   const remaining = Math.max(0, target - eaten);
   const percent = target ? Math.min(100, Math.round((eaten / target) * 100)) : 0;
   return (
-    <article className="rounded-[34px] border border-fit-border bg-fit-surfaceElevated p-5 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
-      <div className="flex items-center justify-between gap-4">
+    <article className="rounded-[30px] border border-fit-border bg-fit-surfaceElevated p-4 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated sm:rounded-[34px] sm:p-5">
+      <div className="flex flex-col items-start justify-between gap-4 min-[390px]:flex-row min-[390px]:items-center">
         <div>
           <p className="flex items-center gap-2 text-sm font-black text-fit-primary"><Target size={17} /> Protein goal</p>
           <h2 className="mt-2 text-2xl font-black text-fit-text dark:text-white">You&apos;re {remaining}g away.</h2>
@@ -158,14 +161,15 @@ export function ProteinProgressCard({ eaten, target, perMeal }: { eaten: number;
 }
 
 export function HydrationTracker({ logged, target, onAdd }: { logged: number; target: number; onAdd?: (amount: number) => void }) {
+  const [customAmount, setCustomAmount] = useState(250);
   const remaining = Math.max(0, target - logged);
   const percent = target ? Math.min(100, Math.round((logged / target) * 100)) : 0;
-  const quickAdds = [250, 500, 750, 1000];
+  const quickAdds = [250, 330, 500, 750, 1000];
   return (
-    <article className="relative overflow-hidden rounded-[34px] border border-fit-border bg-fit-surfaceElevated p-5 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
+    <article className="relative overflow-hidden rounded-[30px] border border-fit-border bg-fit-surfaceElevated p-4 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated sm:rounded-[34px] sm:p-5">
       <div className="absolute bottom-0 left-0 h-20 w-full bg-gradient-to-t from-fit-accent/25 to-transparent transition-all duration-700" style={{ transform: `translateY(${100 - percent}%)` }} />
       <div className="relative">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col items-start justify-between gap-4 min-[390px]:flex-row">
           <div>
             <p className="flex items-center gap-2 text-sm font-black text-fit-secondary"><Droplets size={17} /> Hydration</p>
             <h2 className="mt-2 text-2xl font-black text-fit-text dark:text-white">{remaining}ml left</h2>
@@ -174,13 +178,21 @@ export function HydrationTracker({ logged, target, onAdd }: { logged: number; ta
           <ProgressRing value={percent} label={`${percent}%`} sublabel="water" tone="accent" />
         </div>
         {onAdd && (
-          <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
-            {quickAdds.map((amount) => (
-              <button key={amount} onClick={() => onAdd(amount)} className="shrink-0 rounded-[18px] bg-fit-text px-4 py-3 text-xs font-black text-white transition-transform active:scale-95 dark:bg-white dark:text-fit-bg">
-                +{amount >= 1000 ? "1L" : `${amount}ml`}
+          <>
+            <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+              {quickAdds.map((amount) => (
+                <button key={amount} onClick={() => onAdd(amount)} className="shrink-0 rounded-[18px] bg-fit-text px-4 py-3 text-xs font-black text-white transition-transform active:scale-95 dark:bg-white dark:text-fit-bg">
+                  +{amount >= 1000 ? "1L" : `${amount}ml`}
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 grid gap-2 min-[390px]:grid-cols-[1fr_auto] min-[390px]:items-end">
+              <NumberStepper label="Custom water" value={customAmount} onChange={setCustomAmount} min={50} max={2500} step={50} unit="ml" />
+              <button onClick={() => onAdd(customAmount)} className="h-14 rounded-[22px] bg-fit-secondary px-5 text-sm font-black text-fit-bg transition-transform active:scale-95">
+                Add
               </button>
-            ))}
-          </div>
+            </div>
+          </>
         )}
       </div>
     </article>

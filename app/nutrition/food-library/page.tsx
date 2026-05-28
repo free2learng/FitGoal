@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Check, Coffee, Heart, Plus, Star, Trash2, Utensils, Wand2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { NumberStepper } from "@/components/NumberStepper";
 import { FoodLogButton, FoodSearchCard, HeroCard, ToastNotification } from "@/components/PremiumUI";
 import { todayKey } from "@/lib/generators";
 import { foodLogTotals, foodToLogBase, scaleFoodLog, searchFoods } from "@/lib/nutrition";
@@ -236,7 +237,7 @@ export default function FoodLibraryPage() {
 
   return (
     <AppShell>
-      <section className="space-y-5 px-5 py-5">
+      <section className="mx-auto w-full max-w-5xl space-y-5 px-4 py-5 sm:px-5">
         <HeroCard
           eyebrow="Food studio"
           title="Log it fast."
@@ -270,13 +271,23 @@ export default function FoodLibraryPage() {
             ))}
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <label>
               <span className="mb-2 block text-sm font-black text-fit-text dark:text-white">Serving</span>
               <select value={servingMultiplier} onChange={(event) => setServingMultiplier(Number(event.target.value))} className="h-12 w-full rounded-[20px] border border-fit-border bg-fit-muted px-3 text-sm font-bold outline-none focus:border-fit-primary dark:border-white/10 dark:bg-white/5">
                 {selectedFood.commonServingOptions.map((option) => <option key={option.label} value={option.multiplier}>{option.label}</option>)}
               </select>
             </label>
+            <NumberStepper
+              label="Quantity"
+              value={servingMultiplier}
+              onChange={setServingMultiplier}
+              min={0.25}
+              max={20}
+              step={0.25}
+              helperText="Use + and - for how many servings you want to log."
+              presets={[0.5, 1, 2]}
+            />
             <label>
               <span className="mb-2 block text-sm font-black text-fit-text dark:text-white">Meal type</span>
               <select value={mealType} onChange={(event) => setMealType(event.target.value as MealType)} className="h-12 w-full rounded-[20px] border border-fit-border bg-fit-muted px-3 text-sm font-bold outline-none focus:border-fit-primary dark:border-white/10 dark:bg-white/5">
@@ -293,7 +304,7 @@ export default function FoodLibraryPage() {
 
         <article className="rounded-[32px] border border-fit-border bg-fit-surfaceElevated p-5 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
           <h2 className="text-2xl font-black text-fit-text dark:text-white">Today&apos;s food</h2>
-          <div className="mt-3 grid grid-cols-4 gap-2 text-center text-xs font-black">
+          <div className="mt-3 grid grid-cols-2 gap-2 text-center text-xs font-black min-[360px]:grid-cols-4">
             <Macro label="Cal" value={foodLogTotals(todaysLogs).calories} />
             <Macro label="Pro" value={`${foodLogTotals(todaysLogs).protein}g`} />
             <Macro label="Carbs" value={`${foodLogTotals(todaysLogs).carbs}g`} />
@@ -328,41 +339,41 @@ export default function FoodLibraryPage() {
           </article>
         )}
 
-        <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
-          <h2 className="text-xl font-black text-ink">Meal templates</h2>
+        <article className="rounded-[32px] border border-fit-border bg-fit-surfaceElevated p-5 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
+          <h2 className="text-xl font-black text-fit-text dark:text-white">Meal templates</h2>
           <div className="mt-3 grid gap-2">
             {mealTemplates.map((template) => (
-              <button key={template.id} onClick={() => logTemplate(template.id)} disabled={!state} className="rounded-lg bg-zinc-50 p-3 text-left disabled:opacity-50">
-                <span className="block font-black text-ink">{template.name}</span>
-                <span className="text-sm text-zinc-600">{template.description}</span>
+              <button key={template.id} onClick={() => logTemplate(template.id)} disabled={!state} className="rounded-[22px] bg-fit-muted p-3 text-left transition-transform active:scale-[0.98] disabled:opacity-50 dark:bg-white/5">
+                <span className="block font-black text-fit-text dark:text-white">{template.name}</span>
+                <span className="text-sm font-semibold text-fit-mutedText">{template.description}</span>
               </button>
             ))}
           </div>
         </article>
 
-        <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
+        <article className="rounded-[32px] border border-fit-border bg-fit-surfaceElevated p-5 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
           <button onClick={() => setComboOpen(!comboOpen)} className="flex w-full items-center justify-between text-left">
             <span>
-              <span className="block text-sm font-bold text-leaf">Food combinations</span>
-              <span className="text-xl font-black text-ink">Build from ingredients</span>
+              <span className="block text-sm font-bold text-fit-primary">Food combinations</span>
+              <span className="text-xl font-black text-fit-text dark:text-white">Build from ingredients</span>
             </span>
             <Plus size={20} />
           </button>
           {comboOpen && (
             <div className="mt-4 space-y-3">
-              <p className="text-sm leading-6 text-zinc-600">Examples: tea with milk and sugar, or omelette with eggs, oil, vegetables and cheese.</p>
-              <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg bg-zinc-50 p-2">
+              <p className="text-sm font-semibold leading-6 text-fit-mutedText">Examples: tea with milk and sugar, or omelette with eggs, oil, vegetables and cheese.</p>
+              <div className="max-h-56 space-y-2 overflow-y-auto rounded-[22px] bg-fit-muted p-2 dark:bg-white/5">
                 {comboCandidates.map((food) => (
-                  <label key={food.id} className="flex items-center gap-3 rounded-lg bg-white p-3">
+                  <label key={food.id} className="flex items-center gap-3 rounded-[18px] bg-fit-surfaceElevated p-3 dark:bg-fit-darkElevated">
                     <input type="checkbox" checked={comboIds.includes(food.id)} onChange={() => setComboIds((ids) => ids.includes(food.id) ? ids.filter((id) => id !== food.id) : [...ids, food.id])} />
                     <span>
-                      <span className="block font-black text-ink">{food.name}</span>
-                      <span className="text-xs text-zinc-500">{food.calories} cal - {food.servingSize}{food.servingUnit}</span>
+                      <span className="block font-black text-fit-text dark:text-white">{food.name}</span>
+                      <span className="text-xs text-fit-mutedText">{food.calories} cal - {food.servingSize}{food.servingUnit}</span>
                     </span>
                   </label>
                 ))}
               </div>
-              <button onClick={logCombination} disabled={!state || comboIds.length === 0} className="h-12 w-full rounded-lg bg-ink text-sm font-black text-white disabled:opacity-50">Log combination</button>
+              <button onClick={logCombination} disabled={!state || comboIds.length === 0} className="h-12 w-full rounded-[20px] bg-fit-text text-sm font-black text-white transition-transform active:scale-95 disabled:opacity-50 dark:bg-white dark:text-fit-bg">Log combination</button>
             </div>
           )}
         </article>
@@ -415,25 +426,14 @@ function FoodDropdownRow({ food, logged, disabled, onPick, onLog }: { food: Food
   const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
 
   return (
-    <div className="grid grid-cols-[1fr_72px_82px] items-center gap-2 rounded-[22px] p-2 hover:bg-fit-muted dark:hover:bg-white/5">
+    <div className="grid gap-2 rounded-[22px] p-2 hover:bg-fit-muted dark:hover:bg-white/5 min-[430px]:grid-cols-[1fr_12rem_82px] min-[430px]:items-center">
       <button type="button" onClick={onPick} className="min-w-0 text-left">
         <span className="block truncate text-sm font-black text-fit-text dark:text-white">{food.name}</span>
         <span className="block truncate text-xs font-semibold text-fit-mutedText">
           {food.subcategory} - {food.calories} cal per {food.servingSize}{food.servingUnit}
         </span>
       </button>
-      <label className="min-w-0">
-        <span className="sr-only">Quantity for {food.name}</span>
-        <input
-          value={quantity}
-          onChange={(event) => setQuantity(Number(event.target.value))}
-          type="number"
-          min="0.25"
-          step="0.25"
-          className="h-11 w-full rounded-[18px] border border-fit-border bg-fit-muted px-2 text-center text-sm font-black outline-none focus:border-fit-primary dark:border-white/10 dark:bg-white/5"
-          aria-label={`Quantity for ${food.name}`}
-        />
-      </label>
+      <NumberStepper label="Qty" value={quantity} onChange={setQuantity} min={0.25} max={20} step={0.25} />
       <button type="button" onClick={() => onLog(safeQuantity)} disabled={disabled} className="disabled:opacity-90">
         <FoodLogButton logged={logged} disabled={disabled} />
       </button>
@@ -450,16 +450,10 @@ function FoodSearchRow({ food, selected, favorite, logged, onPick, onLog, state,
         <span className={`text-xs font-bold ${selected ? "text-white/70 dark:text-fit-bg/70" : "text-fit-mutedText"}`}>{food.subcategory} - {food.calories} cal - {food.servingSize}{food.servingUnit}</span>
         <span className={`mt-1 block text-xs font-bold ${selected ? "text-white/70 dark:text-fit-bg/70" : "text-fit-mutedText"}`}>{food.verifiedStatus} - {food.source} - {food.tags.slice(0, 4).join(", ")}</span>
       </button>
-      <div className="mt-2 grid grid-cols-[76px_1fr_40px] gap-2">
-        <input
-          value={quantity}
-          onChange={(event) => setQuantity(Number(event.target.value))}
-          type="number"
-          min="0.25"
-          step="0.25"
-          aria-label={`Quantity for ${food.name}`}
-          className={`h-11 rounded-[18px] border px-2 text-center text-xs font-black outline-none ${selected ? "border-white/20 bg-white/10 text-white dark:text-fit-bg" : "border-fit-border bg-white text-fit-text"}`}
-        />
+      <div className="mt-2 grid gap-2 min-[430px]:grid-cols-[12rem_1fr_40px]">
+        <div className={selected ? "[&_*]:border-white/20 [&_*]:text-white dark:[&_*]:text-fit-bg" : ""}>
+          <NumberStepper label="Qty" value={quantity} onChange={setQuantity} min={0.25} max={20} step={0.25} />
+        </div>
         <button onClick={() => onLog(food, { multiplier: Number.isFinite(quantity) && quantity > 0 ? quantity : 1 })} disabled={!state || logged} className="disabled:opacity-90">
           <FoodLogButton logged={logged} disabled={!state || logged}>Log</FoodLogButton>
         </button>
@@ -471,23 +465,23 @@ function FoodSearchRow({ food, selected, favorite, logged, onPick, onLog, state,
 
 function CustomFoodForm({ open, setOpen, onSubmit }: { open: boolean; setOpen: (open: boolean) => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
   return (
-    <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
+    <article className="rounded-[32px] border border-fit-border bg-fit-surfaceElevated p-5 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
       <button onClick={() => setOpen(!open)} className="flex w-full items-center justify-between text-left">
         <span>
-          <span className="block text-sm font-bold text-leaf">Custom food</span>
-          <span className="text-xl font-black text-ink">Add missing food</span>
+          <span className="block text-sm font-bold text-fit-primary">Custom food</span>
+          <span className="text-xl font-black text-fit-text dark:text-white">Add missing food</span>
         </span>
         <Plus size={20} />
       </button>
       {open && (
         <form onSubmit={onSubmit} className="mt-4 grid gap-3">
           <Input name="name" label="Food name" required />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Select name="category" label="Category" options={customFoodCategories} />
             <Input name="subcategory" label="Subcategory" placeholder="brand, cooked style" />
-            <Input name="servingSize" label="Serving size" type="number" min="0" step="0.1" defaultValue="1" required />
+            <NumberStepper name="servingSize" label="Serving size" defaultValue={1} min={0.1} max={1000} step={0.1} />
             <Input name="servingUnit" label="Unit" placeholder="cup, g, ml, slice" required />
-            <Input name="servings" label="Servings to log" type="number" min="0.25" step="0.25" defaultValue="1" required />
+            <NumberStepper name="servings" label="Servings to log" defaultValue={1} min={0.25} max={20} step={0.25} presets={[0.5, 1, 2]} />
             <Select name="mealType" label="Meal type" options={mealTypes} />
             <Input name="calories" label="Calories" type="number" min="0" required />
             <Input name="protein" label="Protein g" type="number" min="0" required />
@@ -502,12 +496,12 @@ function CustomFoodForm({ open, setOpen, onSubmit }: { open: boolean; setOpen: (
           <Input name="minerals" label="Minerals" placeholder="Iron, Calcium, Potassium" />
           <Input name="tags" label="Tags/synonyms" placeholder="brand, takeaway, drink" />
           <Input name="preparationMethod" label="Preparation" placeholder="boiled, fried, oat milk, restaurant estimate" />
-          <label className="flex items-center gap-2 text-sm font-black text-ink"><input name="isDrink" type="checkbox" /> Drink</label>
-          <select name="status" className="h-11 rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-leaf">
+          <label className="flex items-center gap-2 text-sm font-black text-fit-text dark:text-white"><input name="isDrink" type="checkbox" /> Drink</label>
+          <select name="status" className="h-12 rounded-[20px] border border-fit-border bg-fit-muted px-3 text-sm font-bold outline-none focus:border-fit-primary dark:border-white/10 dark:bg-white/5">
             <option value="eaten">Eaten</option>
             <option value="planned">Planned</option>
           </select>
-          <button className="h-12 rounded-lg bg-ink text-sm font-black text-white">Save to my foods and log</button>
+          <button className="h-12 rounded-[20px] bg-fit-text text-sm font-black text-white transition-transform active:scale-95 dark:bg-white dark:text-fit-bg">Save to my foods and log</button>
         </form>
       )}
     </article>
@@ -516,9 +510,9 @@ function CustomFoodForm({ open, setOpen, onSubmit }: { open: boolean; setOpen: (
 
 function LogSummary({ title, logs, totals, state, onChange, planned = false }: { title: string; logs: FoodLogEntry[]; totals: ReturnType<typeof foodLogTotals>; state: FitGoalState | null; onChange: (state: FitGoalState) => void; planned?: boolean }) {
   return (
-    <article className="rounded-lg border border-zinc-100 bg-white p-5 shadow-sm">
-      <h2 className="text-xl font-black text-ink">{title}</h2>
-      <div className="mt-3 grid grid-cols-4 gap-2 text-center text-xs font-black">
+    <article className="rounded-[32px] border border-fit-border bg-fit-surfaceElevated p-5 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated">
+      <h2 className="text-xl font-black text-fit-text dark:text-white">{title}</h2>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-center text-xs font-black min-[360px]:grid-cols-4">
         <Macro label="Cal" value={totals.calories} />
         <Macro label="Pro" value={`${totals.protein}g`} />
         <Macro label="Sugar" value={`${totals.sugar}g`} />
@@ -526,18 +520,18 @@ function LogSummary({ title, logs, totals, state, onChange, planned = false }: {
       </div>
       <div className="mt-3 space-y-2">
         {logs.length === 0 ? (
-          <p className="rounded-lg bg-zinc-50 p-3 text-sm font-semibold text-zinc-500">No {planned ? "planned" : "eaten"} foods yet.</p>
+          <p className="rounded-[22px] bg-fit-muted p-3 text-sm font-semibold text-fit-mutedText dark:bg-white/5">No {planned ? "planned" : "eaten"} foods yet.</p>
         ) : logs.map((log) => (
-          <div key={log.id} className="rounded-lg bg-zinc-50 p-3">
+          <div key={log.id} className="rounded-[22px] bg-fit-muted p-3 dark:bg-white/5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-black text-ink">{log.foodName}</p>
-                <p className="text-xs font-semibold text-zinc-500">{log.mealType} - {log.servingMultiplier}x {log.serving}</p>
-                <p className="text-sm text-zinc-600">{log.calories} cal - {log.protein}g protein - {log.source}</p>
+                <p className="font-black text-fit-text dark:text-white">{log.foodName}</p>
+                <p className="text-xs font-semibold text-fit-mutedText">{log.mealType} - {log.servingMultiplier}x {log.serving}</p>
+                <p className="text-sm font-semibold text-fit-mutedText">{log.calories} cal - {log.protein}g protein - {log.source}</p>
               </div>
               <div className="flex gap-2">
-                {planned && state && <button onClick={() => onChange(convertPlannedFood(state, log.id))} className="grid h-9 w-9 place-items-center rounded-lg bg-leaf text-white" aria-label="Mark eaten"><Check size={16} /></button>}
-                {state && <button onClick={() => onChange(deleteFoodLog(state, log.id))} className="grid h-9 w-9 place-items-center rounded-lg bg-white text-zinc-500" aria-label="Delete food"><Trash2 size={16} /></button>}
+                {planned && state && <button onClick={() => onChange(convertPlannedFood(state, log.id))} className="grid h-10 w-10 place-items-center rounded-[16px] bg-fit-success text-fit-bg" aria-label="Mark eaten"><Check size={16} /></button>}
+                {state && <button onClick={() => onChange(deleteFoodLog(state, log.id))} className="grid h-10 w-10 place-items-center rounded-[16px] bg-fit-surfaceElevated text-fit-mutedText dark:bg-fit-darkElevated" aria-label="Delete food"><Trash2 size={16} /></button>}
               </div>
             </div>
           </div>
@@ -551,8 +545,8 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { label: str
   const { label, ...inputProps } = props;
   return (
     <label>
-      <span className="mb-2 block text-sm font-black text-ink">{label}</span>
-      <input className="h-11 w-full rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-leaf" {...inputProps} />
+      <span className="mb-2 block text-sm font-black text-fit-text dark:text-white">{label}</span>
+      <input className="h-12 w-full rounded-[20px] border border-fit-border bg-fit-muted px-3 text-sm font-bold outline-none focus:border-fit-primary dark:border-white/10 dark:bg-white/5" {...inputProps} />
     </label>
   );
 }
@@ -560,8 +554,8 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { label: str
 function Select({ name, label, options }: { name: string; label: string; options: string[] }) {
   return (
     <label>
-      <span className="mb-2 block text-sm font-black text-ink">{label}</span>
-      <select name={name} className="h-11 w-full rounded-lg border border-zinc-200 px-3 text-sm font-bold outline-none focus:border-leaf">
+      <span className="mb-2 block text-sm font-black text-fit-text dark:text-white">{label}</span>
+      <select name={name} className="h-12 w-full rounded-[20px] border border-fit-border bg-fit-muted px-3 text-sm font-bold outline-none focus:border-fit-primary dark:border-white/10 dark:bg-white/5">
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
     </label>
@@ -570,9 +564,9 @@ function Select({ name, label, options }: { name: string; label: string; options
 
 function Macro({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg bg-zinc-50 p-2">
-      <p className="text-xs text-zinc-500">{label}</p>
-      <p>{value}</p>
+    <div className="rounded-[18px] bg-fit-muted p-2 dark:bg-white/5">
+      <p className="text-xs text-fit-mutedText">{label}</p>
+      <p className="text-fit-text dark:text-white">{value}</p>
     </div>
   );
 }

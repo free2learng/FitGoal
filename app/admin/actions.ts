@@ -124,3 +124,36 @@ export async function deleteProgram(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin");
 }
+
+export async function upsertVideo(formData: FormData) {
+  await requireAdmin();
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin.from("video_library").upsert({
+    id: String(formData.get("id") || crypto.randomUUID()),
+    title: String(formData.get("title") || ""),
+    category: String(formData.get("category") || "Full body"),
+    body_part: String(formData.get("body_part") || "Full body"),
+    difficulty: String(formData.get("difficulty") || "beginner"),
+    duration_seconds: Number(formData.get("duration_seconds") || 60),
+    thumbnail_url: String(formData.get("thumbnail_url") || ""),
+    video_url: String(formData.get("video_url") || ""),
+    coach_name: String(formData.get("coach_name") || "FitGoal Coach"),
+    tags: textArray(formData.get("tags")),
+    calories_estimate: Number(formData.get("calories_estimate") || 0) || null,
+    related_exercise_id: String(formData.get("related_exercise_id") || "") || null,
+    related_food_id: String(formData.get("related_food_id") || "") || null,
+    like_count: Number(formData.get("like_count") || 0)
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin");
+  revalidatePath("/videos");
+}
+
+export async function deleteVideo(formData: FormData) {
+  await requireAdmin();
+  const admin = createSupabaseAdminClient();
+  const { error } = await admin.from("video_library").delete().eq("id", String(formData.get("id")));
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin");
+  revalidatePath("/videos");
+}

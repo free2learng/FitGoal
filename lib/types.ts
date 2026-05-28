@@ -15,6 +15,7 @@ export type OnboardingProfile = {
 };
 
 export type Exercise = {
+  id?: string;
   name: string;
   sets: number;
   reps: string;
@@ -23,6 +24,19 @@ export type Exercise = {
   targetMuscles?: string[];
   difficulty?: "beginner" | "moderate" | "challenging";
   coachingTip?: string;
+  equipmentNeeded?: string[];
+  instructions?: string[];
+  commonMistakes?: string[];
+  beginnerTips?: string[];
+  breathingTips?: string[];
+  formCues?: string[];
+  goodFor?: string;
+  regression?: string;
+  progression?: string;
+  safetyNotes?: string[];
+  metValue?: number;
+  durationMinutesPerSet?: number;
+  shortVideoTipUrl?: string;
 };
 
 export type ProgramExercise = Exercise & {
@@ -206,6 +220,40 @@ export type MicronutrientItem = {
   whyItMatters: string;
 };
 
+export type VideoCategory =
+  | "Full body"
+  | "Abs / core"
+  | "Chest"
+  | "Back"
+  | "Shoulders"
+  | "Arms"
+  | "Legs"
+  | "Glutes"
+  | "Cardio"
+  | "Mobility"
+  | "Beginner tips"
+  | "Diet tips"
+  | "Protein tips"
+  | "Hydration tips"
+  | "Recovery";
+
+export type FitnessVideo = {
+  id: string;
+  title: string;
+  category: VideoCategory;
+  bodyPart: string;
+  difficulty: "beginner" | "intermediate" | "athletic";
+  durationSeconds: number;
+  thumbnailUrl: string;
+  videoUrl: string;
+  coachName: string;
+  tags: string[];
+  caloriesEstimate?: number;
+  relatedExerciseId?: string;
+  relatedFoodId?: string;
+  likeCount: number;
+};
+
 export type ProgressEntry = {
   id: string;
   date: string;
@@ -224,6 +272,7 @@ export type FitGoalState = {
   foodLogs?: FoodLogEntry[];
   customFoods?: FoodItem[];
   favoriteFoodIds?: string[];
+  favoriteVideoIds?: string[];
   hydrationLogs?: HydrationLogEntry[];
   hydrationAdjustments?: Record<string, HydrationAdjustment[]>;
 };

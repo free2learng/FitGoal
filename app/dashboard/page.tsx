@@ -55,7 +55,8 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
-      <section className="space-y-5 px-5 pb-8 pt-5">
+      <section className="mx-auto grid w-full max-w-5xl gap-5 px-4 pb-8 pt-5 sm:px-5 lg:grid-cols-2">
+        <div className="space-y-5 lg:col-span-2">
         <HeroCard
           eyebrow={planLabel(state.profile.goal)}
           title="Today, we move."
@@ -68,7 +69,9 @@ export default function DashboardPage() {
             </div>
           }
         />
+        </div>
 
+        <div className="space-y-5">
         <MissionCard title={workout.title} focus={workout.focus} burn={workoutBurn} completed={workoutDone} />
         <div className="grid grid-cols-2 gap-3">
           <button onClick={() => setState(completeToday(state))} className="flex h-14 items-center justify-center gap-2 rounded-[24px] bg-fit-success text-sm font-black text-fit-bg shadow-premium transition-transform active:scale-95">
@@ -78,12 +81,17 @@ export default function DashboardPage() {
             <RefreshCcw size={18} /> Shift plan
           </button>
         </div>
+        </div>
 
+        <div className="space-y-5">
         <CalorieBalanceCard eaten={eatenTotals.calories} burned={completedWorkoutCalories} remaining={remainingCalories} status={deficitStatus} percent={caloriePercent} />
 
         <ProteinProgressCard eaten={eatenTotals.protein + plannedTotals.protein} target={macros.protein} perMeal={proteinPerMeal} />
+        </div>
 
+        <div className="lg:col-span-2">
         <HydrationTracker logged={waterLogged} target={waterGoal} onAdd={logWater} />
+        </div>
 
       </section>
     </AppShell>
