@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Dumbbell, Flame, Heart, Plus, Share2, Sparkles, Video } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { EmbeddedVideoPlayer } from "@/components/EmbeddedVideoPlayer";
+import { NativeVideoPlayer } from "@/components/NativeVideoPlayer";
 import { fitnessVideos, videoCategories } from "@/lib/video-data";
 import { loadState, toggleFavoriteVideo } from "@/lib/storage";
 import { supabase } from "@/lib/supabase/client";
@@ -44,6 +44,7 @@ export default function VideosPage() {
         durationSeconds: item.duration_seconds,
         thumbnailUrl: item.thumbnail_url,
         videoUrl: item.video_url,
+        externalUrl: item.external_url ?? undefined,
         coachName: item.coach_name,
         tags: item.tags ?? [],
         targetMuscles: item.target_muscles ?? [],
@@ -122,7 +123,7 @@ export default function VideosPage() {
           </div>
         </div>
 
-        <div className="mx-auto mt-4 grid max-w-[520px] gap-4">
+        <div className="mx-auto mt-4 grid max-w-[430px] snap-y snap-mandatory gap-4">
           {videos.length === 0 ? (
             <EmptyCategory category={category} onSelect={chooseCategory} />
           ) : videos.map((video) => (
@@ -153,45 +154,43 @@ function CategoryChip({ label, count, active, onClick }: { label: string; count:
 
 function VideoFeedCard({ video, saved, onSave }: { video: FitnessVideo; saved: boolean; onSave: () => void }) {
   return (
-    <article data-testid="video-card" className="max-h-[68vh] overflow-y-auto rounded-[28px] border border-fit-border bg-fit-surfaceElevated p-3 shadow-premium dark:border-white/10 dark:bg-fit-darkElevated md:max-h-[72vh]">
-      <div className="relative mx-auto aspect-[9/16] h-[38vh] max-h-[420px] min-h-[260px] w-auto max-w-full">
-        <EmbeddedVideoPlayer videoUrl={video.videoUrl} title={video.title} />
+    <article data-testid="video-card" className="relative h-[75vh] max-h-[680px] snap-start overflow-hidden rounded-[30px] bg-fit-text text-white shadow-premium">
+      <div className="absolute inset-0">
+        <NativeVideoPlayer videoUrl={video.videoUrl} externalUrl={video.externalUrl} posterUrl={video.thumbnailUrl} title={video.title} />
+      </div>
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/88" />
+
+      <div className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-2">
+        <ActionButton label={`${video.likeCount} likes`} icon={<Heart size={16} fill="currentColor" />} />
+        <button onClick={onSave} className={`grid h-10 w-10 place-items-center rounded-[16px] backdrop-blur-xl transition-transform active:scale-95 ${saved ? "bg-fit-success text-fit-bg" : "bg-white/18 text-white"}`} aria-label={saved ? "Saved video" : "Save video"}>
+          <Plus size={17} className={saved ? "rotate-45" : ""} />
+        </button>
+        <ActionButton label="Share" icon={<Share2 size={16} />} />
+        <ActionButton label="Add to workout" icon={video.caloriesEstimate ? <Flame size={16} /> : <Dumbbell size={16} />} />
       </div>
 
-      <div className="mt-3">
-        <div className="flex items-start justify-between gap-3">
+      <div className="absolute inset-x-0 bottom-0 z-10 p-4">
+        <div className="max-w-[calc(100%-3.5rem)]">
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            <span className="rounded-full bg-white/18 px-2.5 py-1 text-[10px] font-black backdrop-blur">{video.category}</span>
+            <span className="rounded-full bg-fit-accent px-2.5 py-1 text-[10px] font-black text-fit-bg">{video.difficulty}</span>
+            <span className="rounded-full bg-white/18 px-2.5 py-1 text-[10px] font-black backdrop-blur">{Math.max(1, Math.round(video.durationSeconds / 60))} min</span>
+          </div>
           <div className="min-w-0">
-            <div className="flex flex-wrap gap-1.5">
-              <span className="rounded-full bg-fit-muted px-2.5 py-1 text-[10px] font-black text-fit-mutedText dark:bg-white/5 dark:text-white/60">{video.category}</span>
-              <span className="rounded-full bg-fit-accent px-2.5 py-1 text-[10px] font-black text-fit-bg">{video.difficulty}</span>
-              <span className="rounded-full bg-fit-muted px-2.5 py-1 text-[10px] font-black text-fit-mutedText dark:bg-white/5 dark:text-white/60">{Math.max(1, Math.round(video.durationSeconds / 60))} min</span>
-            </div>
-            <h2 className="mt-2 text-[clamp(1.2rem,4.8vw,1.55rem)] font-black leading-tight text-fit-text dark:text-white">{video.title}</h2>
-            <p className="mt-1 text-xs font-bold text-fit-mutedText">{video.coachName} • {video.bodyPart}</p>
+            <h2 className="text-[clamp(1.25rem,5vw,1.75rem)] font-black leading-tight">{video.title}</h2>
+            <p className="mt-1 text-xs font-bold text-white/70">{video.coachName} • {video.bodyPart}</p>
           </div>
-          <div className="flex shrink-0 flex-col gap-1.5">
-            <ActionButton label={`${video.likeCount} likes`} icon={<Heart size={15} fill="currentColor" />} />
-            <button onClick={onSave} className={`grid h-9 w-9 place-items-center rounded-[15px] transition-transform active:scale-95 ${saved ? "bg-fit-success text-fit-bg" : "bg-fit-muted text-fit-mutedText dark:bg-white/5 dark:text-white/70"}`} aria-label={saved ? "Saved video" : "Save video"}>
-              <Plus size={16} className={saved ? "rotate-45" : ""} />
-            </button>
-            <ActionButton label="Share" icon={<Share2 size={15} />} />
+
+          <div className="mt-3 grid gap-2 text-xs font-bold min-[390px]:grid-cols-3">
+            <InfoPill label="Targets" value={video.targetMuscles.slice(0, 3).join(", ") || "Full body"} />
+            <InfoPill label="Burn" value={video.caloriesEstimate ? `${video.caloriesEstimate} cal` : "Guide"} />
+            <InfoPill label="Safety" value={video.safetyNotes[0] ?? "Move pain-free"} />
           </div>
+
+          <p className="mt-3 text-xs font-bold leading-5 text-white/78">
+            {video.coachTips[0] ?? "Focus on control first, then build intensity."}
+          </p>
         </div>
-
-        <div className="mt-3 grid gap-2 text-xs font-bold min-[390px]:grid-cols-3">
-          <InfoPill label="Targets" value={video.targetMuscles.slice(0, 3).join(", ") || "Full body"} />
-          <InfoPill label="Burn" value={video.caloriesEstimate ? `${video.caloriesEstimate} cal` : "Guide"} />
-          <InfoPill label="Safety" value={video.safetyNotes[0] ?? "Move pain-free"} />
-        </div>
-
-        <p className="mt-3 text-xs font-bold leading-5 text-fit-mutedText">
-          {video.coachTips[0] ?? "Focus on control first, then build intensity."}
-        </p>
-
-        <button className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-[18px] bg-fit-success text-xs font-black text-fit-bg transition-transform active:scale-95">
-          {video.caloriesEstimate ? <Flame size={15} /> : <Dumbbell size={15} />}
-          {video.caloriesEstimate ? "Log workout" : "Add to workout"}
-        </button>
       </div>
     </article>
   );
@@ -199,16 +198,16 @@ function VideoFeedCard({ video, saved, onSave }: { video: FitnessVideo; saved: b
 
 function InfoPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[16px] bg-fit-muted px-3 py-2 dark:bg-white/5">
-      <span className="block text-[10px] font-black uppercase tracking-[0.12em] text-fit-mutedText">{label}</span>
-      <span className="line-clamp-1 text-fit-text dark:text-white">{value}</span>
+    <div className="rounded-[16px] bg-black/32 px-3 py-2 backdrop-blur">
+      <span className="block text-[10px] font-black uppercase tracking-[0.12em] text-white/48">{label}</span>
+      <span className="line-clamp-1 text-white">{value}</span>
     </div>
   );
 }
 
 function ActionButton({ label, icon }: { label: string; icon: React.ReactNode }) {
   return (
-    <button className="grid h-9 w-9 place-items-center rounded-[15px] bg-fit-muted text-fit-mutedText transition-transform active:scale-95 dark:bg-white/5 dark:text-white/70" aria-label={label}>
+    <button className="grid h-10 w-10 place-items-center rounded-[16px] bg-white/18 text-white backdrop-blur-xl transition-transform active:scale-95" aria-label={label}>
       {icon}
     </button>
   );

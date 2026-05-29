@@ -246,6 +246,7 @@ export type FitnessVideo = {
   durationSeconds: number;
   thumbnailUrl: string;
   videoUrl: string;
+  externalUrl?: string;
   coachName: string;
   tags: string[];
   targetMuscles: string[];

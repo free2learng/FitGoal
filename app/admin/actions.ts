@@ -137,6 +137,7 @@ export async function upsertVideo(formData: FormData) {
     duration_seconds: Number(formData.get("duration_seconds") || 60),
     thumbnail_url: String(formData.get("thumbnail_url") || ""),
     video_url: String(formData.get("video_url") || ""),
+    external_url: String(formData.get("external_url") || "") || null,
     coach_name: String(formData.get("coach_name") || "FitGoal Coach"),
     tags: textArray(formData.get("tags")),
     target_muscles: textArray(formData.get("target_muscles")),

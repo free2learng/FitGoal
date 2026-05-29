@@ -264,7 +264,8 @@ function VideoForm({ video, compact = false }: { video?: any; compact?: boolean 
         <Input name="like_count" label="Likes" type="number" defaultValue={video?.like_count ?? 0} />
       </div>
       <Input name="thumbnail_url" label="Thumbnail URL" defaultValue={video?.thumbnail_url} />
-      <Input name="video_url" label="Video URL" defaultValue={video?.video_url} required />
+      <Input name="video_url" label="Direct video URL (.mp4/.webm)" defaultValue={video?.video_url} placeholder="Supabase Storage public URL" />
+      <Input name="external_url" label="Optional YouTube fallback URL" defaultValue={video?.external_url ?? ""} />
       <Input name="tags" label="Tags" defaultValue={video?.tags?.join(", ")} />
       <Input name="target_muscles" label="Target muscles" defaultValue={video?.target_muscles?.join(", ")} />
       <Input name="coach_tips" label="Coach tips" defaultValue={video?.coach_tips?.join(", ")} />
