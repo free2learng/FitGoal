@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { ExternalLink, Play, Volume2, VolumeX } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ExternalLink, Pause, Play, Volume2, VolumeX } from "lucide-react";
 
 function isNativeVideoUrl(url: string) {
   return /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
@@ -12,7 +12,29 @@ export function NativeVideoPlayer({ videoUrl, externalUrl, posterUrl, title }: {
   const [loading, setLoading] = useState(Boolean(videoUrl));
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
+  const [inView, setInView] = useState(false);
   const playable = Boolean(videoUrl && isNativeVideoUrl(videoUrl));
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !playable) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const active = entry.isIntersecting && entry.intersectionRatio >= 0.62;
+        setInView(active);
+        if (active) {
+          video.play().catch(() => undefined);
+        } else {
+          video.pause();
+        }
+      },
+      { threshold: [0, 0.35, 0.62, 0.85] }
+    );
+
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, [playable]);
 
   async function togglePlay() {
     const video = videoRef.current;
@@ -31,6 +53,15 @@ export function NativeVideoPlayer({ videoUrl, externalUrl, posterUrl, title }: {
     if (!video || !playable) return;
     video.muted = !video.muted;
     setMuted(video.muted);
+  }
+
+  function handleVideoTap() {
+    if (!playable) return;
+    if (muted) {
+      toggleMute();
+      return;
+    }
+    void togglePlay();
   }
 
   if (!playable) {
@@ -68,8 +99,8 @@ export function NativeVideoPlayer({ videoUrl, externalUrl, posterUrl, title }: {
           Loading video...
         </div>
       )}
-      <button type="button" onClick={togglePlay} className="absolute inset-0 z-[2]" aria-label={paused ? `Play ${title}` : `Pause ${title}`}>
-        <span className="sr-only">{paused ? "Play" : "Pause"}</span>
+      <button type="button" onClick={handleVideoTap} className="absolute inset-0 z-[2]" aria-label={muted ? `Unmute ${title}` : paused ? `Play ${title}` : `Pause ${title}`}>
+        <span className="sr-only">{muted ? "Unmute" : paused ? "Play" : "Pause"}</span>
       </button>
       <video
         ref={videoRef}
@@ -86,13 +117,21 @@ export function NativeVideoPlayer({ videoUrl, externalUrl, posterUrl, title }: {
         onPlay={() => setPaused(false)}
         onPause={() => setPaused(true)}
       />
-      {paused && (
+      {(paused || !inView) && (
         <div className="pointer-events-none absolute inset-0 z-[3] grid place-items-center">
           <span className="grid h-16 w-16 place-items-center rounded-full bg-black/35 backdrop-blur">
             <Play size={24} fill="currentColor" />
           </span>
         </div>
       )}
+      <button
+        type="button"
+        onClick={togglePlay}
+        className="absolute left-3 top-3 z-[4] grid h-10 w-10 place-items-center rounded-full bg-black/35 backdrop-blur transition-transform active:scale-95"
+        aria-label={paused ? "Play video" : "Pause video"}
+      >
+        {paused ? <Play size={16} fill="currentColor" /> : <Pause size={16} fill="currentColor" />}
+      </button>
       <button
         type="button"
         onClick={toggleMute}
