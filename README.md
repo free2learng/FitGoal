@@ -27,6 +27,7 @@ FitGoal is a mobile-first MVP fitness app built with Next.js, TypeScript, Tailwi
 - Account screen at `/account` with Google sign-in through Supabase or guest mode
 - Login screen at `/login` using Supabase Google OAuth with SSR cookie auth
 - Protected admin dashboard at `/admin` for users whose `profiles.role` is `admin`
+- Native short-form Video Hub at `/videos` using HTML5 video playback and direct `.mp4/.webm/.ogg` URLs
 - Supabase-ready state snapshots for performance analysis of food logs, hydration, workouts, weight, and waist progress
 - Supabase SQL schema and optional Prisma schema
 
@@ -174,6 +175,26 @@ For this MVP, the frontend uses local seed data from `lib/seed-data.ts`. A pract
 The program and nutrition seed data live in `lib/program-data.ts`. It includes the Stubborn Belly Fat Killer program, exercise demo metadata, a larger API-ready nutrition food library, meal templates, and vitamin/mineral reference data. `lib/calories.ts` contains the MET calorie calculator.
 
 The food schema is designed for later integrations with USDA FoodData Central, Open Food Facts, barcode scanning, branded supermarket foods, and restaurant nutrition data through fields such as `source`, `external_provider`, `external_id`, `barcode`, `brand_name`, serving options, tags, synonyms, and verification status.
+
+## Video library
+
+The Video Hub uses native HTML5 video playback, so `video_url` must be a direct video file URL ending in `.mp4`, `.webm`, or `.ogg`. YouTube links are supported only as optional `external_url` fallback links.
+
+Temporary open-license video sources are listed in `lib/open-video-sources.ts`. They point to Wikimedia Commons videos and include source pages, authors, and license labels so they can be replaced later with original FitGoal videos.
+
+To upload those temporary videos into Supabase Storage and update replaceable `video_library` rows:
+
+```bash
+npm run videos:upload-open
+```
+
+Requirements:
+
+- `.env.local` must include `NEXT_PUBLIC_SUPABASE_URL`
+- `.env.local` must include `SUPABASE_SERVICE_ROLE_KEY`
+- Run `supabase/migrations/009_native_video_urls.sql` first so the `fitgoal-videos` bucket and storage policies exist
+
+The script uploads files into the `fitgoal-videos/open-source/` folder and only replaces empty, old demo, or Wikimedia placeholder `video_url` values. It leaves existing custom Supabase video URLs alone.
 
 ## Project structure
 

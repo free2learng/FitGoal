@@ -1,9 +1,5 @@
 import { FitnessVideo, VideoCategory } from "@/lib/types";
-
-const demoVideoFiles = [
-  "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-  "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm"
-];
+import { openFitnessVideoUrl } from "@/lib/open-video-sources";
 
 const supplementalMajorCategoryVideos: FitnessVideo[] = [
   video({
@@ -351,8 +347,7 @@ const supplementalMajorCategoryVideos: FitnessVideo[] = [
 ];
 
 function nativeVideo(seed: string) {
-  const index = seed.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0) % demoVideoFiles.length;
-  return demoVideoFiles[index];
+  return openFitnessVideoUrl(seed);
 }
 
 function thumb(seed: string) {
